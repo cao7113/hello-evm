@@ -1,0 +1,45 @@
+# https://taskfile.dev/usage/
+version: '3'
+tasks:
+  default: forge test
+  b: forge build
+
+  ## ERC20 eg. USDT
+  deploy-usdt: |
+    forge create --rpc-url http://localhost:8545 \
+      --constructor-args "Local USDT" "USDT" 18 100000000000000000000000000 \
+      --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+      # --etherscan-api-key <your_etherscan_api_key> \
+      # --verify \
+      src/USDT.sol:USDT
+  usdt-abi: forge inspect USDT abi
+  usdt-bin: forge inspect USDT bytecode
+
+  test20abi: |
+    mkdir -p local
+    if [ ! -d local/solmate ]; then
+      ln -s $(realpath lib/solmate/src) local/solmate
+    fi
+
+    solc --base-path . \
+    --include-path local/ \
+    --combined-json abi,bin src/Test20.sol | \
+    jq ".contracts | to_entries | .[1].value " > local/test20.json
+
+  deps: forge remappings
+  setup-deps: |
+    # forge install transmissions11/solmate@v7
+    forge install transmissions11/solmate
+  # forge update lib/solmate
+  deps-up: forge update
+
+  # local test evm node
+  # anvil --help
+
+  ## Foundry toolchain
+  # https://book.getfoundry.sh/getting-started/installation
+  setup-foundryup: curl -L https://foundry.paradigm.xyz | bash
+  fup: foundryup
+
+  # use template: https://github.com/foundry-rs/forge-template
+  mk-hello-foundry: forge init hello-foundry --shallow
