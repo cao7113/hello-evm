@@ -4,6 +4,8 @@ tasks:
   default: forge test
   b: forge build
 
+  ## ERC721 eg. Hero
+
   ## ERC20 eg. USDT
   deploy-usdt: |
     forge create --rpc-url http://localhost:8545 \
@@ -15,7 +17,7 @@ tasks:
   usdt-abi: forge inspect USDT abi
   usdt-bin: forge inspect USDT bytecode
 
-  test20abi: |
+  test20abibin: |
     mkdir -p local
     if [ ! -d local/solmate ]; then
       ln -s $(realpath lib/solmate/src) local/solmate
@@ -26,12 +28,14 @@ tasks:
     --combined-json abi,bin src/Test20.sol | \
     jq ".contracts | to_entries | .[1].value " > local/test20.json
 
-  deps: forge remappings
-  setup-deps: |
+  mappings: forge remappings
+  deps-install: |
     # forge install transmissions11/solmate@v7
-    forge install transmissions11/solmate
+    # forge install transmissions11/solmate
+    forge install transmissions11/solmate Openzeppelin/openzeppelin-contracts
   # forge update lib/solmate
   deps-up: forge update
+
 
   # local test evm node
   # anvil --help
