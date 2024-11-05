@@ -4,3 +4,18 @@ out = "out"
 libs = ["lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+
+# rpc endpoints todo
+[rpc_endpoints]
+anvil = "${ANVIL_RPC_URL}"
+mainnet = "https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID"
+goerli = "https://goerli.infura.io/v3/YOUR_INFURA_PROJECT_ID"
+sepolia = "${SEPOLIA_RPC_URL}"
+# https://chainlist.org/chain/11155111
+# sepolia = "https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID"
+bsc = "https://bsc-dataseed.binance.org/"
+polygon = "https://polygon-rpc.com"
+
+[etherscan]
+sepolia = { key = "${ETHERSCAN_API_KEY}" }

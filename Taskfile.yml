@@ -1,44 +1,233 @@
 # https://taskfile.dev/usage/
 version: '3'
-tasks:
-  default: forge test
-  b: forge build
+vars:
+  # anvil default Create2 factory
+  CREATE2_DEPLOYER: "0x4e59b44847b379578588920ca78fbf26c0b4956c"
+dotenv: ['.env']
 
-  ## ERC721 eg. Hero
+tasks:
+  default: task fg-test
+
+  ## forge
+  fg-build: forge build
+  fg-test: forge test --gas-report
+
+  # https://book.getfoundry.sh/tutorials/solidity-scripting#deploying-locally
+  fg-s-counter: |
+    source .env
+    # forge script script/Counter.s.sol:CounterScript \
+    #   --json -vvvv --rpc-url $ANVIL_RPC_URL --broadcast  # --verify
+    forge script script/Counter.s.sol:CounterScript --json -vvvv \
+      --fork-url $ANVIL_RPC_URL --broadcast
+  # todo bsct verify test
+  fg-s-counter-sepolia: |
+    source .env
+    forge script script/Counter.s.sol:CounterScript --broadcast -vvvv --rpc-url $SEPOLIA_RPC_URL #--verify 
+
+  ## Anvil: anvil --help
+  # https://book.getfoundry.sh/reference/anvil/
+  anvil: |
+    echo "Starting anvil local test evm"
+    tmux kill-session -t anvil || true
+    tmux new-session -d -s anvil "anvil" || true
+    sleep 2
+    task anvil-init
+    cast call 0xfe401ec7fBcc826338f8b63bbAca0b09a3Aef0D6 "number()"
+    echo "run [ tmux a ] to attach anvil tmux session!"
+    
+  anvil-init: |
+    source .env
+    forge script script/Init.s.sol:AnvilInitScript --rpc-url $ANVIL_RPC_URL --broadcast
+  
+  anvil-keys: cat keys/anvil.key | head -n 24 | tail -n +11
+  anvil-accounts: cast rpc eth_accounts | jq
+  accounts: task anvil-accounts
+  # anvil completions zsh > $HOME/.oh-my-zsh/completions/_anvil
+
+  ## Cast https://book.getfoundry.sh/reference/anvil/#standard-methods
+  node: cast rpc anvil_nodeInfo | jq
+  # balance setting
+  # cast rpc anvil_setBalance 0xa59daA5b1DD0fe5bC162d53856A037e04f28FcDF $(cast tw 10000 | cast th)
+  # cast rpc eth_getBalance 0xa59daA5b1DD0fe5bC162d53856A037e04f28FcDF latest
+  balance: |
+    dec=$(cast rpc eth_getBalance {{.CLI_ARGS}} latest | tr -d '"' | cast to-dec)
+    echo "$dec / 1e18" | bc -l
+  a: task balance -- {{.ALICE_ADDRESS}}
+
+  # https://book.getfoundry.sh/tutorials/forking-mainnet-with-cast-anvil
+  # This calls Anvil and lets us impersonate our unlucky user
+  # $ cast rpc anvil_impersonateAccount $UNLUCKY_USER
+  # $ cast send $DAI \
+  # --from $UNLUCKY_USER \
+  #   "transfer(address,uint256)(bool)" \
+  #   $ALICE \
+  #   300000000000000000000000 \
+  #   --unlocked
+  # cast call $DAI \
+  # "balanceOf(address)(uint256)" \
+  # $ALICE
+
+  ## Try
+
+  # create2 factory
+  # https://github.com/foundry-rs/foundry/pull/5391
+  # https://github.com/foundry-rs/foundry/discussions/3587
+  # https://github.com/foundry-rs/foundry/issues/2638
+  # https://github.com/Arachnid/deterministic-deployment-proxyc
+  # foundry-built-in create2 deployer
+  create2-builtin-code: cast code {{.CREATE2_DEPLOYER}}
+  create2-create: |
+    forge create src/Create2.sol:Create2 \
+      --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} \
+      --json 
+      # --etherscan-api-key <your_etherscan_api_key> \
+      # --verify
+      
+  create2-test: forge test --match-path test/Create2.t.sol --match-test testReDeploy -vvvv
+
+  create2-abi: forge inspect Create2 abi
+  create2-bin: forge inspect Create2 bytecode
+  create2-abi-bin: |
+    ABI=$(task create2-abi)
+    BIN=$(task create2-bin)
+
+    cat <<EOL > local/Create2.json
+    {
+      "abi": $ABI,
+      "bin": "$BIN"
+    }
+    EOL
+  
+  c2-counter: |
+    deployer=0xa513E6E4b8f2a923D98304ec87F64353C4D5C853
+    salt=0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+    initcode=$(task counter-bin)
+    addr=$(cast create2 --deployer $deployer --salt $salt --init-code $initcode)
+    echo "computed counter address: $addr"
+    cast code $addr
+    cast send $deployer \
+      "deploy(bytes32,bytes)" $salt $initcode \
+      --rpc-url {{.ANVIL_RPC_URL}} --private-key {{.ALICE_KEY}} || true
+    cast send $addr "increment()" --private-key {{.ALICE_KEY}}
+    echo "computed counter address: $addr, its current number"
+    cast call $addr "number()"
+
+  # todo: 使用自带的create2 deployer 部署失败!
+  c2: |
+    deployer={{.CREATE2_DEPLOYER}}
+    # 0x1200000000000000000000000000000000000000000000000000000000000000
+    salt=$(cast --to-bytes32 0x12)
+    initcode=$(task counter-bin)
+    addr=$(cast create2 --deployer $deployer --salt $salt --init-code $initcode)
+    echo "computed counter address: $addr"
+    # cast code $addr
+    initcode2=${initcode:2}
+
+    # 手动计算
+    INIT_CODE_HASH=$(cast keccak $initcode2)
+    CREATE2_INPUT="0xff${deployer:2}${salt:2}${INIT_CODE_HASH:2}"
+    CREATE2_ADDRESS="0x$(cast keccak $CREATE2_INPUT | tail -c 41)"
+    echo "CREATE2_ADDRESS= $CREATE2_ADDRESS"
+    ## function deploy(uint256 salt, bytes memory initCode) external payable returns (address);
+    cast send $deployer \
+      "deploy(uint256,bytes)" $salt $initcode2 \
+      --rpc-url {{.ANVIL_RPC_URL}} --private-key {{.ALICE_KEY}}  --verbose
+
+    # cast send $addr "increment()" --private-key {{.ALICE_KEY}}
+    # echo "computed counter address: $addr, its current number"
+    # cast call $addr "number()"
 
   ## ERC20 eg. USDT
-  deploy-usdt: |
-    forge create --rpc-url http://localhost:8545 \
-      --constructor-args "Local USDT" "USDT" 18 100000000000000000000000000 \
-      --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  # Note: The --constructor-args flag must be positioned last in the command, since it takes multiple values.
+  test20-create: |
+    json=$(forge create src/Test20.sol:Test20 --rpc-url={{.ANVIL_RPC_URL}} \
+      --private-key={{.ALICE_KEY}} \
+      --json \
       # --etherscan-api-key <your_etherscan_api_key> \
       # --verify \
-      src/USDT.sol:USDT
-  usdt-abi: forge inspect USDT abi
-  usdt-bin: forge inspect USDT bytecode
+      --constructor-args "Local USDT" "USDT" 6 10000000000
+      )
+    deployedTo=$(echo $json | jq .deployedTo | tr -d '"')
+    echo "deployedTo=$deployedTo with alice balance"
+    cast call $deployedTo "balanceOf(address)(uint256)" {{.ALICE_ADDRESS}}
 
-  test20abibin: |
-    mkdir -p local
-    if [ ! -d local/solmate ]; then
-      ln -s $(realpath lib/solmate/src) local/solmate
-    fi
+  test20-abi: forge inspect Test20 abi
+  test20-bin: forge inspect Test20 bytecode
+  test20-abi-bin: |
+    ABI=$(task usdt-abi)
+    BIN=$(task usdt-bin)
 
-    solc --base-path . \
-    --include-path local/ \
-    --combined-json abi,bin src/Test20.sol | \
-    jq ".contracts | to_entries | .[1].value " > local/test20.json
+    cat <<EOL > local/Test20.json
+    {
+      "abi": $ABI,
+      "bin": "$BIN"
+    }
+    EOL
+  # below need complex mapping construct, deprecated
+  # test20-abi-bin: |
+  #   mkdir -p local
+  #   if [ ! -d local/solmate ]; then
+  #     ln -s $(realpath lib/solmate/src) local/solmate
+  #   fi
 
-  mappings: forge remappings
+  #   solc --base-path . \
+  #   --include-path local/ \
+  #   --combined-json abi,bin src/Test20.sol | \
+  #   jq ".contracts | to_entries | .[1].value " > local/Test20.json
+
+  ## ERC721 eg. Hero
+  # forge create NFT --rpc-url=$ANVIL_RPC_URL --private-key=$ALICE_KEY --constructor-args <name> <symbol>
+  nft-create: |
+    forge create NFT --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} \
+      --constructor-args "Hero profile" "HERO" \
+      # --etherscan-api-key <your_etherscan_api_key> \
+      # --verify \
+      src/nft.sol:NFT
+  
+  nft-send: cast send --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} {{.CLI_ARGS}}
+  nft-mint: task nft-send -- 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9  "mintTo(address)" {{.ALICE_ADDRESS}} 
+  nft-call: cast call --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} {{.CLI_ARGS}}
+  nft-owner: task nft-call -- 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "ownerOf(uint256)" 1
+  
+  nft-abi: forge inspect NFT abi
+  nft-bin: forge inspect NFT bytecode
+  nft-abi-bin: |
+    ABI=$(task nft-abi)
+    BIN=$(task nft-bin)
+
+    cat <<EOL > local/NFT.json
+    {
+      "abi": $ABI,
+      "bin": "$BIN"
+    }
+    EOL
+
+  ## Counter
+  counter-create: |
+    forge create --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} \
+      # --constructor-args "Local USDT" "USDT" 18 100000000000000000000000000 \
+      # --etherscan-api-key <your_etherscan_api_key> \
+      # --verify \
+      src/Counter.sol:Counter
+
+  counter-abi: forge inspect Counter abi
+  counter-bin: forge inspect Counter bytecode
+  # forge build
+  counter-bin2: cat out/Counter.sol/Counter.json | jq -r '.bytecode.object' 
+  
+  counter-abi-bin: |
+    solc --combined-json abi,bin src/Counter.sol:Counter | \
+    jq ".contracts | to_entries | .[1].value " > local/Counter.json
+
+  ## Base
+
+  mapping: forge remappings
   deps-install: |
     # forge install transmissions11/solmate@v7
     # forge install transmissions11/solmate
     forge install transmissions11/solmate Openzeppelin/openzeppelin-contracts
   # forge update lib/solmate
   deps-up: forge update
-
-
-  # local test evm node
-  # anvil --help
 
   ## Foundry toolchain
   # https://book.getfoundry.sh/getting-started/installation
@@ -47,3 +236,10 @@ tasks:
 
   # use template: https://github.com/foundry-rs/forge-template
   mk-hello-foundry: forge init hello-foundry --shallow
+
+  env-test: |
+    echo SEPOLIA_RPC_URL=$SEPOLIA_RPC_URL ALICE_ADDRESS = $ALICE_ADDRESS
+    echo ANVIL_RPC_URL=$ANVIL_RPC_URL in env syntax ANVIL_RPC_URL={{.ANVIL_RPC_URL}} in var syntax
+    echo UNKNOWN_ENV=$UNKNOWN_ENV in env syntax  UNKNOWN_ENV={{.UNKNOWN_ENV}} in var syntax
+    echo UNKNOWN_VAR=$UNKNOWN_VAR in env syntax  UNKNOWN_ENV={{.UNKNOWN_VAR}} in var syntax
+  et: task env-test
