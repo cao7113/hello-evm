@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Script} from "forge-std/Script.sol";
-import {NFT} from "../src/NFT.sol";
+import {NFT} from "../../src/tokens/NFT.sol";
 
 contract NFTScript is Script {
     function run() external {
