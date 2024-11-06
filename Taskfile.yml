@@ -2,7 +2,8 @@
 version: '3'
 vars:
   # anvil default Create2 factory
-  CREATE2_DEPLOYER: "0x4e59b44847b379578588920ca78fbf26c0b4956c"
+  ANVil_CREATE2_DEPLOYER: "0x4e59b44847b379578588920ca78fbf26c0b4956c"
+  CREATE2_DEPLOYER: 0x5FbDB2315678afecb367f032d93F642f64180aa3
 dotenv: ['.env']
 
 tasks:
@@ -37,7 +38,7 @@ tasks:
     
   anvil-init: |
     source .env
-    forge script script/Init.s.sol:AnvilInitScript --rpc-url $ANVIL_RPC_URL --broadcast
+    forge script script/AnvilInit.s.sol:AnvilInitScript --rpc-url $ANVIL_RPC_URL --broadcast
   
   anvil-keys: cat keys/anvil.key | head -n 24 | tail -n +11
   anvil-accounts: cast rpc eth_accounts | jq
@@ -99,8 +100,8 @@ tasks:
     EOL
   
   c2-counter: |
-    deployer=0xa513E6E4b8f2a923D98304ec87F64353C4D5C853
-    salt=0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+    deployer={{.CREATE2_DEPLOYER}}
+    salt=$(cast to-bytes32 0x1234)
     initcode=$(task counter-bin)
     addr=$(cast create2 --deployer $deployer --salt $salt --init-code $initcode)
     echo "computed counter address: $addr"
@@ -140,7 +141,7 @@ tasks:
   ## ERC20 eg. USDT
   # Note: The --constructor-args flag must be positioned last in the command, since it takes multiple values.
   test20-create: |
-    json=$(forge create src/Test20.sol:Test20 --rpc-url={{.ANVIL_RPC_URL}} \
+    json=$(forge create src/tokens/Test20.sol:Test20 --rpc-url={{.ANVIL_RPC_URL}} \
       --private-key={{.ALICE_KEY}} \
       --json \
       # --etherscan-api-key <your_etherscan_api_key> \
@@ -178,11 +179,11 @@ tasks:
   ## ERC721 eg. Hero
   # forge create NFT --rpc-url=$ANVIL_RPC_URL --private-key=$ALICE_KEY --constructor-args <name> <symbol>
   nft-create: |
-    forge create NFT --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} \
-      --constructor-args "Hero profile" "HERO" \
+    forge create src/tokens/nft.sol:NFT --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} \
+      --json \
+      --constructor-args "Hero profile" "HERO" 
       # --etherscan-api-key <your_etherscan_api_key> \
-      # --verify \
-      src/nft.sol:NFT
+      # --verify 
   
   nft-send: cast send --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} {{.CLI_ARGS}}
   nft-mint: task nft-send -- 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9  "mintTo(address)" {{.ALICE_ADDRESS}} 

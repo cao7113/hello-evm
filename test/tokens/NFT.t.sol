@@ -26,10 +26,7 @@ contract NFTTest is Test {
     }
 
     function test_RevertMintMaxSupplyReached() public {
-        uint256 slot = stdstore
-            .target(address(nft))
-            .sig("currentTokenId()")
-            .find();
+        uint256 slot = stdstore.target(address(nft)).sig("currentTokenId()").find();
         bytes32 loc = bytes32(slot);
         bytes32 mockedCurrentTokenId = bytes32(abi.encode(10000));
         vm.store(address(nft), loc, mockedCurrentTokenId);
@@ -44,48 +41,29 @@ contract NFTTest is Test {
 
     function test_NewMintOwnerRegistered() public {
         nft.mintTo{value: 0.01 ether}(address(1));
-        uint256 slotOfNewOwner = stdstore
-            .target(address(nft))
-            .sig(nft.ownerOf.selector)
-            .with_key(address(1))
-            .find();
+        uint256 slotOfNewOwner = stdstore.target(address(nft)).sig(nft.ownerOf.selector).with_key(address(1)).find();
 
-        uint160 ownerOfTokenIdOne = uint160(
-            uint256(
-                (vm.load(address(nft), bytes32(abi.encode(slotOfNewOwner))))
-            )
-        );
+        uint160 ownerOfTokenIdOne = uint160(uint256((vm.load(address(nft), bytes32(abi.encode(slotOfNewOwner))))));
         assertEq(address(ownerOfTokenIdOne), address(1));
     }
 
     function test_BalanceIncremented() public {
         nft.mintTo{value: 0.01 ether}(address(1));
-        uint256 slotBalance = stdstore
-            .target(address(nft))
-            .sig(nft.balanceOf.selector)
-            .with_key(address(1))
-            .find();
+        uint256 slotBalance = stdstore.target(address(nft)).sig(nft.balanceOf.selector).with_key(address(1)).find();
 
-        uint256 balanceFirstMint = uint256(
-            vm.load(address(nft), bytes32(slotBalance))
-        );
+        uint256 balanceFirstMint = uint256(vm.load(address(nft), bytes32(slotBalance)));
         assertEq(balanceFirstMint, 1);
 
         nft.mintTo{value: 0.01 ether}(address(1));
-        uint256 balanceSecondMint = uint256(
-            vm.load(address(nft), bytes32(slotBalance))
-        );
+        uint256 balanceSecondMint = uint256(vm.load(address(nft), bytes32(slotBalance)));
         assertEq(balanceSecondMint, 2);
     }
 
     function test_SafeContractReceiver() public {
         Receiver receiver = new Receiver();
         nft.mintTo{value: 0.01 ether}(address(receiver));
-        uint256 slotBalance = stdstore
-            .target(address(nft))
-            .sig(nft.balanceOf.selector)
-            .with_key(address(receiver))
-            .find();
+        uint256 slotBalance =
+            stdstore.target(address(nft)).sig(nft.balanceOf.selector).with_key(address(receiver)).find();
 
         uint256 balance = uint256(vm.load(address(nft), bytes32(slotBalance)));
         assertEq(balance, 1);
@@ -127,12 +105,11 @@ contract NFTTest is Test {
 }
 
 contract Receiver is ERC721TokenReceiver {
-    function onERC721Received(
-        address operator,
-        address from,
-        uint256 id,
-        bytes calldata data
-    ) external override returns (bytes4) {
+    function onERC721Received(address operator, address from, uint256 id, bytes calldata data)
+        external
+        override
+        returns (bytes4)
+    {
         return this.onERC721Received.selector;
     }
 }
