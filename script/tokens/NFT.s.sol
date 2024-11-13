@@ -6,10 +6,18 @@ import {NFT} from "../../src/tokens/NFT.sol";
 
 contract NFTScript is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("SCRIPT_RUNNER_PRIVATE_KEY");
-        vm.startBroadcast(deployerPrivateKey);
+        uint256 runnerPrivateKey = vm.envUint("SCRIPT_RUNNER_PRIVATE_KEY");
+        address runnerAddress = vm.addr(runnerPrivateKey);
+        vm.startBroadcast(runnerPrivateKey);
 
-        NFT nft = new NFT("NFT_tutorial", "TUT", "baseUri");
+        NFT nft = new NFT(
+            "NFT_tutorial",
+            "TUT",
+            "baseUri",
+            runnerAddress,
+            5 gwei,
+            10000
+        );
 
         vm.stopBroadcast();
     }

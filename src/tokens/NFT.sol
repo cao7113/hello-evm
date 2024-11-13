@@ -8,32 +8,42 @@ import {ERC721} from "solmate/tokens/ERC721.sol";
 import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
 import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
 
+error InvalidSupply();
 error MintPriceNotPaid();
 error MaxSupply();
 error NonExistentTokenURI();
-error WithdrawTransfer();
+error NoBalanceToWithdraw();
 
 contract NFT is ERC721, Ownable {
     using Strings for uint256;
 
     string public baseURI;
     uint256 public currentTokenId;
-    uint256 public constant TOTAL_SUPPLY = 10_000;
-    uint256 public constant MINT_PRICE = 0.01 ether;
+    uint256 public mint_price;
+    uint256 public total_supply;
 
-    constructor(string memory _name, string memory _symbol, string memory _baseURI)
-        ERC721(_name, _symbol)
-        Ownable(msg.sender)
-    {
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        string memory _baseURI,
+        address _owner,
+        uint256 _mint_price,
+        uint256 _total_supply
+    ) ERC721(_name, _symbol) Ownable(_owner) {
         baseURI = _baseURI;
+        mint_price = _mint_price;
+        if (_total_supply <= 0) {
+            revert InvalidSupply();
+        }
+        total_supply = _total_supply;
     }
 
     function mintTo(address recipient) public payable returns (uint256) {
-        if (msg.value != MINT_PRICE) {
+        if (msg.value != mint_price) {
             revert MintPriceNotPaid();
         }
         uint256 newTokenId = currentTokenId + 1;
-        if (newTokenId > TOTAL_SUPPLY) {
+        if (newTokenId > total_supply) {
             revert MaxSupply();
         }
         currentTokenId = newTokenId;
@@ -41,16 +51,21 @@ contract NFT is ERC721, Ownable {
         return newTokenId;
     }
 
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+    function tokenURI(
+        uint256 tokenId
+    ) public view virtual override returns (string memory) {
         if (ownerOf(tokenId) == address(0)) {
             revert NonExistentTokenURI();
         }
-        return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : "";
+        return
+            bytes(baseURI).length > 0
+                ? string(abi.encodePacked(baseURI, tokenId.toString()))
+                : "";
     }
 
     function withdrawPayments(address payable payee) external onlyOwner {
         if (address(this).balance == 0) {
-            revert WithdrawTransfer();
+            revert NoBalanceToWithdraw();
         }
 
         payable(payee).transfer(address(this).balance);

@@ -1,9 +1,16 @@
 # https://taskfile.dev/usage/
 version: '3'
 vars:
+  ## holders
+  ALICE_ADDRESS: 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
+  
+  ## Create2
   # anvil default Create2 factory
-  ANVil_CREATE2_DEPLOYER: "0x4e59b44847b379578588920ca78fbf26c0b4956c"
-  CREATE2_DEPLOYER: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  # ANVIL_DEFAULT_CREATE2_FACTORY: "0x4e59b44847b379578588920ca78fbf26c0b4956c"
+  CREATE2_FACTORY: 0x5FbDB2315678afecb367f032d93F642f64180aa3
+  CREATE2_COUNTER_ADDRESS: 0xfe401ec7fBcc826338f8b63bbAca0b09a3Aef0D6
+  CREATE2_TEST20_ADDRESS: 0xEdf5a0E8f8c5a760F5EBB55C1adE668C79A47986
+  CREATE2_HERO_ADDRESS: 0x894e470ccF6dAa4c28fD7756c397bA01e2c05591
 dotenv: ['.env']
 
 tasks:
@@ -12,6 +19,26 @@ tasks:
   ## forge
   fg-build: forge build
   fg-test: forge test --gas-report
+
+  ## test create2 addrs
+  create2-contracts: |
+    echo "## test2 token {{.CREATE2_TEST20_ADDRESS}}"
+    echo "name()returns(string)"
+    cast call {{.CREATE2_TEST20_ADDRESS}} "name()returns(string)"
+    echo "symbol()returns(string)"
+    cast call {{.CREATE2_TEST20_ADDRESS}} "symbol()returns(string)"
+    echo "decimals()returns(uint8)"
+    cast call {{.CREATE2_TEST20_ADDRESS}} "decimals()returns(uint8)"
+    echo "balanceOf ALICE_ADDRESS={{.ALICE_ADDRESS}}"
+    cast call {{.CREATE2_TEST20_ADDRESS}} "balanceOf(address)returns(uint256)" {{.ALICE_ADDRESS}}
+    echo "balanceOf CREATE2_FACTORY={{.CREATE2_FACTORY}}"
+    cast call {{.CREATE2_TEST20_ADDRESS}} "balanceOf(address)returns(uint256)" {{.CREATE2_FACTORY}}
+
+    echo "## Hero NFT"
+    echo "name()returns(string)"
+    cast call {{.CREATE2_HERO_ADDRESS}} "name()returns(string)"
+    echo "symbol()returns(string)"
+    cast call {{.CREATE2_HERO_ADDRESS}} "symbol()returns(string)"
 
   # https://book.getfoundry.sh/tutorials/solidity-scripting#deploying-locally
   fg-s-counter: |
@@ -76,7 +103,7 @@ tasks:
   # https://github.com/foundry-rs/foundry/issues/2638
   # https://github.com/Arachnid/deterministic-deployment-proxyc
   # foundry-built-in create2 deployer
-  create2-builtin-code: cast code {{.CREATE2_DEPLOYER}}
+  create2-builtin-code: cast code {{.CREATE2_FACTORY}}
   create2-create: |
     forge create src/Create2.sol:Create2 \
       --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} \
@@ -100,7 +127,7 @@ tasks:
     EOL
   
   c2-counter: |
-    deployer={{.CREATE2_DEPLOYER}}
+    deployer={{.CREATE2_FACTORY}}
     salt=$(cast to-bytes32 0x1234)
     initcode=$(task counter-bin)
     addr=$(cast create2 --deployer $deployer --salt $salt --init-code $initcode)
@@ -115,7 +142,7 @@ tasks:
 
   # todo: 使用自带的create2 deployer 部署失败!
   c2: |
-    deployer={{.CREATE2_DEPLOYER}}
+    deployer={{.CREATE2_FACTORY}}
     # 0x1200000000000000000000000000000000000000000000000000000000000000
     salt=$(cast --to-bytes32 0x12)
     initcode=$(task counter-bin)
