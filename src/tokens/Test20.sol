@@ -6,12 +6,20 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 error ZeroInitHolder();
 
 contract Test20 is ERC20 {
-    constructor(string memory name, string memory symbol, uint8 decimals, uint256 initialSupply, address initHolder)
-        ERC20(name, symbol, decimals)
-    {
-        if (initHolder == address(0)) {
+    address public immutable initHolder;
+    uint256 public immutable initSupply;
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals,
+        address _initHolder,
+        uint256 _initialSupply
+    ) ERC20(_name, _symbol, _decimals) {
+        if (_initHolder == address(0)) {
             revert ZeroInitHolder();
         }
-        _mint(initHolder, initialSupply);
+        initHolder = _initHolder;
+        initSupply = _initialSupply;
+        _mint(_initHolder, _initialSupply);
     }
 }

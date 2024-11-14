@@ -9,7 +9,7 @@ vars:
   # ANVIL_DEFAULT_CREATE2_FACTORY: "0x4e59b44847b379578588920ca78fbf26c0b4956c"
   CREATE2_FACTORY: 0x5FbDB2315678afecb367f032d93F642f64180aa3
   CREATE2_COUNTER_ADDRESS: 0xfe401ec7fBcc826338f8b63bbAca0b09a3Aef0D6
-  CREATE2_TEST20_ADDRESS: 0x3eAbc6A07d377943D74FD57D4Ae4dcC67C754deF
+  CREATE2_TEST20_ADDRESS: 0x145D70E9c5300429fEfa890E3A9E4789453023a8
   CREATE2_HERO_ADDRESS: 0xc5924359739ad88B19ba1424Caf45D38915A84A3
 dotenv: ['.env']
 
@@ -20,7 +20,7 @@ tasks:
   fg-build: forge build
   fg-test: forge test --gas-report
 
-  ## test create2 addrs
+  ## tk create2-contracts
   create2-contracts: |
     echo "## test2 token {{.CREATE2_TEST20_ADDRESS}}"
     echo "name()returns(string)"
@@ -29,6 +29,10 @@ tasks:
     cast call {{.CREATE2_TEST20_ADDRESS}} "symbol()returns(string)"
     echo "decimals()returns(uint8)"
     cast call {{.CREATE2_TEST20_ADDRESS}} "decimals()returns(uint8)"
+    echo "initHolder()returns(address)"
+    cast call {{.CREATE2_TEST20_ADDRESS}} "initHolder()returns(address)"
+    echo "initSupply()returns(uint256)"
+    cast call {{.CREATE2_TEST20_ADDRESS}} "initSupply()returns(uint256)"
     echo "balanceOf ALICE_ADDRESS={{.ALICE_ADDRESS}}"
     cast call {{.CREATE2_TEST20_ADDRESS}} "balanceOf(address)returns(uint256)" {{.ALICE_ADDRESS}}
     echo "balanceOf CREATE2_FACTORY={{.CREATE2_FACTORY}}"
@@ -182,8 +186,8 @@ tasks:
   test20-abi: forge inspect Test20 abi
   test20-bin: forge inspect Test20 bytecode
   test20-abi-bin: |
-    ABI=$(task usdt-abi)
-    BIN=$(task usdt-bin)
+    ABI=$(task test20-abi)
+    BIN=$(task test20-bin)
 
     cat <<EOL > local/Test20.json
     {
@@ -233,7 +237,6 @@ tasks:
   ## Counter
   counter-create: |
     forge create --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} \
-      # --constructor-args "Local USDT" "USDT" 18 100000000000000000000000000 \
       # --etherscan-api-key <your_etherscan_api_key> \
       # --verify \
       src/Counter.sol:Counter
