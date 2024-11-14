@@ -8,6 +8,7 @@ error ZeroInitHolder();
 contract Test20 is ERC20 {
     address public immutable initHolder;
     uint256 public immutable initSupply;
+
     constructor(
         string memory _name,
         string memory _symbol,

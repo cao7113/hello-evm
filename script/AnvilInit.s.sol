@@ -23,10 +23,7 @@ contract AnvilInitScript is Script {
         uint256 runnerPrivateKey = vm.envUint("SCRIPT_RUNNER_PRIVATE_KEY");
         address runnerAddress = vm.addr(runnerPrivateKey);
         uint256 nonce = getNonce(runnerAddress);
-        require(
-            nonce == 0,
-            "Init runner nonce should be 0, aborting deployment."
-        );
+        require(nonce == 0, "Init runner nonce should be 0, aborting deployment.");
         require(runnerAddress == mustRunnerAddress, "Unmatched deployer");
 
         vm.startBroadcast(runnerPrivateKey);
@@ -35,29 +32,16 @@ contract AnvilInitScript is Script {
 
         // deploy Counter
         bytes memory initCode = abi.encodePacked(type(Counter).creationCode);
-        address computedCounterAddress = create2Deployer.computeAddress(
-            salt,
-            keccak256(initCode)
-        );
+        address computedCounterAddress = create2Deployer.computeAddress(salt, keccak256(initCode));
         address deployedAddress = create2Deployer.deploy(salt, initCode);
-        require(
-            computedCounterAddress == deployedAddress,
-            "create2 counter computed-address invalid"
-        );
+        require(computedCounterAddress == deployedAddress, "create2 counter computed-address invalid");
         Counter(deployedAddress).increment();
         uint256 num = Counter(deployedAddress).number();
         require(num == 1, "counter number != 1");
 
         // deploy test20 by create2
         initCode = abi.encodePacked(
-            type(Test20).creationCode,
-            abi.encode(
-                "Local USDT",
-                "USDT",
-                uint8(6),
-                runnerAddress,
-                uint256(10 ** (6 + 6))
-            )
+            type(Test20).creationCode, abi.encode("Local USDT", "USDT", uint8(6), runnerAddress, uint256(10 ** (6 + 6)))
         );
         address test20Address = create2Deployer.deploy(salt, initCode);
 
@@ -70,22 +54,12 @@ contract AnvilInitScript is Script {
 
         // deploy nft by create2
         initCode = abi.encodePacked(
-            type(NFT).creationCode,
-            abi.encode(
-                "Hero NFT",
-                "Hero",
-                "blank://hero-url",
-                runnerAddress,
-                1000 gwei,
-                10000
-            )
+            type(NFT).creationCode, abi.encode("Hero NFT", "Hero", "blank://hero-url", runnerAddress, 1000 gwei, 10000)
         );
 
         address nftAddress = create2Deployer.deploy(salt, initCode);
         uint256 mintValue = NFT(nftAddress).mint_price();
-        uint256 token_id = NFT(nftAddress).mintTo{value: mintValue}(
-            runnerAddress
-        );
+        uint256 token_id = NFT(nftAddress).mintTo{value: mintValue}(runnerAddress);
         require(token_id == 1, "init mint hero token != 1");
 
         // try write final result

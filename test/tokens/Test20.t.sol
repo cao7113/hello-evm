@@ -10,13 +10,7 @@ contract Test20Test is Test {
     address constant runnerAddress = address(123);
 
     function setUp() public {
-        test20 = new Test20(
-            "Local USDT",
-            "USDT",
-            4,
-            runnerAddress,
-            10 ** (4 + 4)
-        );
+        test20 = new Test20("Local USDT", "USDT", 4, runnerAddress, 10 ** (4 + 4));
     }
 
     function test_constructorInfo() public view {
