@@ -51,16 +51,11 @@ contract NFT is ERC721, Ownable {
         return newTokenId;
     }
 
-    function tokenURI(
-        uint256 tokenId
-    ) public view virtual override returns (string memory) {
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         if (ownerOf(tokenId) == address(0)) {
             revert NonExistentTokenURI();
         }
-        return
-            bytes(baseURI).length > 0
-                ? string(abi.encodePacked(baseURI, tokenId.toString()))
-                : "";
+        return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : "";
     }
 
     function withdrawPayments(address payable payee) external onlyOwner {

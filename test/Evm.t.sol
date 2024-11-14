@@ -5,9 +5,11 @@ import {Test, console} from "forge-std/Test.sol";
 
 contract Ac {
     address public msgSender;
+
     constructor() {
         msgSender = msg.sender;
     }
+
     function setSender() public {
         msgSender = msg.sender;
     }
@@ -28,10 +30,7 @@ contract AcTest is Test {
     function test_setSender() public {
         console.log("default msg sender", ac.msgSender());
         ac.setSender();
-        console.log(
-            "new msg sender after setSender in test_setSender",
-            ac.msgSender()
-        );
+        console.log("new msg sender after setSender in test_setSender", ac.msgSender());
 
         // default msg sender 0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496
         // new msg sender after setSender in test_setSender 0x7FA9385bE102ac3EAc297483Dd6233D62b3e1496
@@ -39,21 +38,12 @@ contract AcTest is Test {
 
     function test_setSenderWithPrank() public {
         uint256 defaultBal = ac.msgSender().balance;
-        console.log(
-            "default msg sender",
-            ac.msgSender(),
-            "with balance:",
-            defaultBal
-        );
+        console.log("default msg sender", ac.msgSender(), "with balance:", defaultBal);
 
         address addr = address(7);
         vm.prank(addr);
         ac.setSender();
-        console.log(
-            "new msg sender",
-            ac.msgSender(),
-            "after setSender in test_setSenderWithPrank"
-        );
+        console.log("new msg sender", ac.msgSender(), "after setSender in test_setSenderWithPrank");
 
         // get and set account's native balance
         console.log("blance is 0 after prank, can use vm.deal to set balance");

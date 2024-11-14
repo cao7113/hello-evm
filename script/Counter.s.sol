@@ -13,7 +13,7 @@ contract CounterScript is Script {
         uint256 runnerPrivateKey = vm.envUint("SCRIPT_RUNNER_PRIVATE_KEY");
         vm.startBroadcast(runnerPrivateKey);
 
-        counter = new Counter();
+        new Counter();
 
         vm.stopBroadcast();
     }

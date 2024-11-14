@@ -10,14 +10,7 @@ contract NFTScript is Script {
         address runnerAddress = vm.addr(runnerPrivateKey);
         vm.startBroadcast(runnerPrivateKey);
 
-        NFT nft = new NFT(
-            "NFT_tutorial",
-            "TUT",
-            "baseUri",
-            runnerAddress,
-            5 gwei,
-            10000
-        );
+        new NFT("NFT_tutorial", "TUT", "baseUri", runnerAddress, 5 gwei, 10000);
 
         vm.stopBroadcast();
     }

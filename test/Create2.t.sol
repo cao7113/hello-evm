@@ -21,10 +21,7 @@ contract Create2Test is Test {
         bytes32 salt = "12345";
         bytes memory initCode = abi.encodePacked(type(Counter).creationCode);
 
-        address computedAddress = create2.computeAddress(
-            salt,
-            keccak256(initCode)
-        );
+        address computedAddress = create2.computeAddress(salt, keccak256(initCode));
         address deployedAddress = create2.deploy(salt, initCode);
         vm.stopPrank();
 

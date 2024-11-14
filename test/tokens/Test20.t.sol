@@ -6,20 +6,11 @@ import "forge-std/StdStorage.sol";
 import "../../src/tokens/Test20.sol";
 
 contract Test20Test is Test {
-    // using stdStorage for StdStorage;
     Test20 private test20;
-    address runnerAddress;
+    address constant runnerAddress = address(123);
 
     function setUp() public {
-        uint256 runnerPrivateKey = vm.envUint("SCRIPT_RUNNER_PRIVATE_KEY");
-        runnerAddress = vm.addr(runnerPrivateKey);
-        test20 = new Test20(
-            "Local USDT",
-            "USDT",
-            4,
-            10 ** (4 + 4),
-            runnerAddress
-        );
+        test20 = new Test20("Local USDT", "USDT", 4, 10 ** (4 + 4), runnerAddress);
     }
 
     function test_constructorInfo() public view {
