@@ -4,17 +4,17 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "forge-std/StdStorage.sol";
 import "solmate/tokens/ERC721.sol";
-import "../../src/tokens/NFT.sol";
+import "../../src/tokens/ERC721Token.sol";
 
-contract NFTTest is Test {
+contract ERC721TokenTest is Test {
     using stdStorage for StdStorage;
 
-    NFT private nft;
+    ERC721Token private nft;
     address constant runnerAddress = address(123);
     uint256 public fee;
 
     function setUp() public {
-        nft = new NFT("NFT_tutorial", "TUT", "baseUri", runnerAddress, 5 gwei, 10000);
+        nft = new ERC721Token("ERC721Token_tutorial", "TUT", "baseUri", runnerAddress, 5 gwei, 10000);
         fee = nft.mint_price();
     }
 
@@ -27,7 +27,7 @@ contract NFTTest is Test {
 
     function test_invalidSupply() public {
         vm.expectRevert(InvalidSupply.selector);
-        new NFT("NFT_tutorial", "TUT", "baseUri", runnerAddress, 5 gwei, 0);
+        new ERC721Token("ERC721Token_tutorial", "TUT", "baseUri", runnerAddress, 5 gwei, 0);
     }
 
     function test_RevertMintWithoutValue() public {
@@ -37,6 +37,20 @@ contract NFTTest is Test {
 
     function test_MintPricePaid() public {
         nft.mintTo{value: nft.mint_price()}(address(1));
+    }
+
+    function test_changeBaseURIAsOwner() public {
+        // console.log("## balance of runnerAddress", runnerAddress.balance);
+        assertEq(runnerAddress.balance, 0);
+        vm.startPrank(runnerAddress);
+        // console.log(
+        //     "## balance of runnerAddress after startPrank",
+        //     runnerAddress.balance
+        // );
+        assertEq(runnerAddress.balance, 0);
+        nft.setBaseURI("new://base-url");
+        vm.stopPrank();
+        assertEq(nft.baseURI(), "new://base-url");
     }
 
     // todo: why failed ???
@@ -101,7 +115,7 @@ contract NFTTest is Test {
     }
 
     function test_WithdrawalWorksAsOwner() public {
-        // Mint an NFT, sending eth to NFT contract
+        // Mint an ERC721Token, sending eth to ERC721Token contract
         Receiver receiver = new Receiver();
         nft.mintTo{value: fee}(address(receiver));
 
@@ -138,7 +152,7 @@ contract NFTTest is Test {
     }
 
     function test_WithdrawalFailsAsNotOwner() public {
-        // Mint an NFT, sending eth to the contract
+        // Mint an ERC721Token, sending eth to the contract
         Receiver receiver = new Receiver();
         nft.mintTo{value: nft.mint_price()}(address(receiver));
         // Check that the balance of the contract is correct

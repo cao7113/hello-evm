@@ -14,13 +14,15 @@ error MaxSupply();
 error NonExistentTokenURI();
 error NoBalanceToWithdraw();
 
-contract NFT is ERC721, Ownable {
+contract ERC721Token is ERC721, Ownable {
     using Strings for uint256;
 
     string public baseURI;
     uint256 public currentTokenId;
     uint256 public mint_price;
-    uint256 public total_supply;
+    uint256 public immutable total_supply;
+
+    event BaseURIChanged(string indexed from, string indexed to);
 
     constructor(
         string memory _name,
@@ -56,6 +58,11 @@ contract NFT is ERC721, Ownable {
             revert NonExistentTokenURI();
         }
         return bytes(baseURI).length > 0 ? string(abi.encodePacked(baseURI, tokenId.toString())) : "";
+    }
+
+    function setBaseURI(string memory _newBaseURI) external onlyOwner {
+        emit BaseURIChanged(baseURI, _newBaseURI);
+        baseURI = _newBaseURI;
     }
 
     function withdrawPayments(address payable payee) external onlyOwner {

@@ -9,19 +9,20 @@ vars:
   # ANVIL_DEFAULT_CREATE2_FACTORY: "0x4e59b44847b379578588920ca78fbf26c0b4956c"
   CREATE2_FACTORY: 0x5FbDB2315678afecb367f032d93F642f64180aa3
   CREATE2_COUNTER_ADDRESS: 0xfe401ec7fBcc826338f8b63bbAca0b09a3Aef0D6
-  CREATE2_TEST20_ADDRESS: 0x145D70E9c5300429fEfa890E3A9E4789453023a8
-  CREATE2_HERO_ADDRESS: 0xc5924359739ad88B19ba1424Caf45D38915A84A3
+  CREATE2_TEST20_ADDRESS: 0x0c299d7C4c2AdF1D593D36049534C14DaDd7Af52
+  CREATE2_HERO_ADDRESS: 0xd7dacebCC0dA4F502973159634EF11e70Df62063
 dotenv: ['.env']
 
 tasks:
-  default: task fg-test
+  default: task fg-test && task fg-fmt
 
   ## forge
   fg-build: forge build
   fg-test: forge test --gas-report
+  fg-fmt: forge fmt
 
   ## tk create2-contracts
-  create2-contracts: |
+  c2-test: |
     echo "## test2 token {{.CREATE2_TEST20_ADDRESS}}"
     echo "name()returns(string)"
     cast call {{.CREATE2_TEST20_ADDRESS}} "name()returns(string)"
@@ -38,7 +39,7 @@ tasks:
     echo "balanceOf CREATE2_FACTORY={{.CREATE2_FACTORY}}"
     cast call {{.CREATE2_TEST20_ADDRESS}} "balanceOf(address)returns(uint256)" {{.CREATE2_FACTORY}}
 
-    echo "## Hero NFT"
+    echo "## Hero ERC721Token"
     echo "name()returns(string)"
     cast call {{.CREATE2_HERO_ADDRESS}} "name()returns(string)"
     echo "symbol()returns(string)"
@@ -64,7 +65,10 @@ tasks:
     tmux new-session -d -s anvil "anvil" || true
     sleep 2
     task anvil-init
-    cast call 0xfe401ec7fBcc826338f8b63bbAca0b09a3Aef0D6 "number()"
+    # update abi-bin(s)
+    task counter-abi-bin
+    task erc20token-abi-bin
+    task nft-abi-bin
     echo "run [ tmux a ] to attach anvil tmux session!"
     
   anvil-init: |
@@ -171,8 +175,8 @@ tasks:
 
   ## ERC20 eg. USDT
   # Note: The --constructor-args flag must be positioned last in the command, since it takes multiple values.
-  test20-create: |
-    json=$(forge create src/tokens/Test20.sol:Test20 --rpc-url={{.ANVIL_RPC_URL}} \
+  erc20token-create: |
+    json=$(forge create src/tokens/ERC20Token.sol:ERC20Token --rpc-url={{.ANVIL_RPC_URL}} \
       --private-key={{.ALICE_KEY}} \
       --json \
       # --etherscan-api-key <your_etherscan_api_key> \
@@ -183,34 +187,23 @@ tasks:
     echo "deployedTo=$deployedTo with alice balance"
     cast call $deployedTo "balanceOf(address)(uint256)" {{.ALICE_ADDRESS}}
 
-  test20-abi: forge inspect Test20 abi
-  test20-bin: forge inspect Test20 bytecode
-  test20-abi-bin: |
-    ABI=$(task test20-abi)
-    BIN=$(task test20-bin)
+  erc20token-abi: forge inspect ERC20Token abi
+  erc20token-bin: forge inspect ERC20Token bytecode
+  erc20token-abi-bin: |
+    ABI=$(task erc20token-abi)
+    BIN=$(task erc20token-bin)
 
-    cat <<EOL > local/Test20.json
+    cat <<EOL > local/ERC20Token.json
     {
       "abi": $ABI,
       "bin": "$BIN"
     }
     EOL
-  # below need complex mapping construct, deprecated
-  # test20-abi-bin: |
-  #   mkdir -p local
-  #   if [ ! -d local/solmate ]; then
-  #     ln -s $(realpath lib/solmate/src) local/solmate
-  #   fi
-
-  #   solc --base-path . \
-  #   --include-path local/ \
-  #   --combined-json abi,bin src/Test20.sol | \
-  #   jq ".contracts | to_entries | .[1].value " > local/Test20.json
 
   ## ERC721 eg. Hero
-  # forge create NFT --rpc-url=$ANVIL_RPC_URL --private-key=$ALICE_KEY --constructor-args <name> <symbol>
+  # forge create ERC721Token --rpc-url=$ANVIL_RPC_URL --private-key=$ALICE_KEY --constructor-args <name> <symbol>
   nft-create: |
-    forge create src/tokens/nft.sol:NFT --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} \
+    forge create src/tokens/nft.sol:ERC721Token --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} \
       --json \
       --constructor-args "Hero profile" "HERO" 
       # --etherscan-api-key <your_etherscan_api_key> \
@@ -221,13 +214,13 @@ tasks:
   nft-call: cast call --rpc-url={{.ANVIL_RPC_URL}} --private-key={{.ALICE_KEY}} {{.CLI_ARGS}}
   nft-owner: task nft-call -- 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "ownerOf(uint256)" 1
   
-  nft-abi: forge inspect NFT abi
-  nft-bin: forge inspect NFT bytecode
+  nft-abi: forge inspect ERC721Token abi
+  nft-bin: forge inspect ERC721Token bytecode
   nft-abi-bin: |
     ABI=$(task nft-abi)
     BIN=$(task nft-bin)
 
-    cat <<EOL > local/NFT.json
+    cat <<EOL > local/ERC721Token.json
     {
       "abi": $ABI,
       "bin": "$BIN"
@@ -247,8 +240,17 @@ tasks:
   counter-bin2: cat out/Counter.sol/Counter.json | jq -r '.bytecode.object' 
   
   counter-abi-bin: |
-    solc --combined-json abi,bin src/Counter.sol:Counter | \
-    jq ".contracts | to_entries | .[1].value " > local/Counter.json
+    # solc --combined-json abi,bin src/Counter.sol:Counter | \
+    # jq ".contracts | to_entries | .[1].value " > local/Counter.json
+    ABI=$(task counter-abi)
+    BIN=$(task counter-bin)
+
+    cat <<EOL > local/Counter.json
+    {
+      "abi": $ABI,
+      "bin": "$BIN"
+    }
+    EOL
 
   ## Base
 

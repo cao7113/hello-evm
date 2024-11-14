@@ -5,7 +5,7 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 
 error ZeroInitHolder();
 
-contract Test20 is ERC20 {
+contract ERC20Token is ERC20 {
     address public immutable initHolder;
     uint256 public immutable initSupply;
 
