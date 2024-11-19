@@ -42,18 +42,18 @@ contract AnvilInitScript is Script {
         // deploy erc20token by create2
         initCode = abi.encodePacked(
             type(ERC20Token).creationCode,
-            abi.encode("Local USDT", "USDT", uint8(6), runnerAddress, uint256(10 ** (6 + 6)))
+            abi.encode("USDT Mock", "USDT", uint8(6), runnerAddress, uint256(10 ** (6 + 6)))
         );
         address erc20tokenAddress = create2Deployer.deploy(salt, initCode);
 
         // deploy nft by create2
         initCode = abi.encodePacked(
             type(ERC721Token).creationCode,
-            abi.encode("Hero ERC721Token", "Hero", "blank://todo-hero-url", runnerAddress, 100 gwei, 10000)
+            abi.encode("Hero ERC721Token", "Hero", "blank://todo-hero-url", runnerAddress, 100 gwei, uint256(10_000))
         );
 
         address nftAddress = create2Deployer.deploy(salt, initCode);
-        uint256 mintValue = ERC721Token(nftAddress).mint_price();
+        uint256 mintValue = ERC721Token(nftAddress).mintPrice();
         uint256 token_id = ERC721Token(nftAddress).mintTo{value: mintValue}(runnerAddress);
         require(token_id == 1, "init mint hero token != 1");
 
@@ -61,7 +61,7 @@ contract AnvilInitScript is Script {
         console.log("## Anvil Create Init Result Begin");
         console.log("CREATE2_FACTORY:", address(create2Deployer));
         console.log("CREATE2_COUNTER_ADDRESS:", counterAddress);
-        console.log("CREATE2_TEST20_ADDRESS:", erc20tokenAddress);
+        console.log("CREATE2_USDT_MOCK_ADDRESS:", erc20tokenAddress);
         console.log("CREATE2_HERO_ADDRESS:", nftAddress);
         console.log("## Anvil Create Init Result End");
 

@@ -10,7 +10,7 @@ contract ERC721TokenScript is Script {
         address runnerAddress = vm.addr(runnerPrivateKey);
         vm.startBroadcast(runnerPrivateKey);
 
-        new ERC721Token("ERC721Token_tutorial", "TUT", "baseUri", runnerAddress, 5 gwei, 10000);
+        new ERC721Token("ERC721Token_tutorial", "TUT", "baseUri", runnerAddress, 5 gwei, 10_000);
 
         vm.stopBroadcast();
     }

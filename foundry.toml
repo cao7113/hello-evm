@@ -5,17 +5,41 @@ libs = ["lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
+## Custom
+# work with vscode https://book.getfoundry.sh/config/vscode
+# forge remappings > remappings.txt
 
-# rpc endpoints todo
+# solc --version # or 0.8.28+commit.7893614a from https://etherscan.io/solcversions
+# Version: 0.8.28+commit.7893614a.Darwin.appleclang
+solc = "0.8.28"
+# Whether or not to enable the Solidity optimizer.
+optimizer = true
+# optimizer_runs = 200
+
+## Test https://book.getfoundry.sh/reference/config/testing
+verbosity = 2 # -v
+# sender = "0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38"
+# sender = "0x0000c8AB1F12E6bbf3894d4083f33e07309d1f38"
+# 79228162514264337593543950335
+# initial_balance = "0xffffffffffffffffffffffff"
+
+# same as [profile.default.fmt]
+[fmt]
+number_underscore = "thousands"
+
+# rpc endpoints
 [rpc_endpoints]
 anvil = "${ANVIL_RPC_URL}"
-mainnet = "https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID"
-goerli = "https://goerli.infura.io/v3/YOUR_INFURA_PROJECT_ID"
 sepolia = "${SEPOLIA_RPC_URL}"
-# https://chainlist.org/chain/11155111
-# sepolia = "https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID"
+mainnet = "https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID"
 bsc = "https://bsc-dataseed.binance.org/"
 polygon = "https://polygon-rpc.com"
 
 [etherscan]
 sepolia = { key = "${ETHERSCAN_API_KEY}" }
+
+# FOUNDRY_PROFILE=ci forge test
+[profile.ci]
+verbosity = 4
+
+[profile.ci.fmt]

@@ -3,15 +3,15 @@ version: '3'
 vars:
   ## holders
   ALICE_ADDRESS: 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266
-  
   ## Create2
   # anvil default Create2 factory
   # ANVIL_DEFAULT_CREATE2_FACTORY: "0x4e59b44847b379578588920ca78fbf26c0b4956c"
   CREATE2_FACTORY: 0x5FbDB2315678afecb367f032d93F642f64180aa3
-  CREATE2_COUNTER_ADDRESS: 0xfe401ec7fBcc826338f8b63bbAca0b09a3Aef0D6
-  CREATE2_TEST20_ADDRESS: 0x0c299d7C4c2AdF1D593D36049534C14DaDd7Af52
-  CREATE2_HERO_ADDRESS: 0xd7dacebCC0dA4F502973159634EF11e70Df62063
-dotenv: ['.env']
+  CREATE2_COUNTER_ADDRESS: 0xFa6081FB320c75D8b22f7676D3A4e5A4C8f4B5c0
+  CREATE2_USDT_MOCK_ADDRESS: 0x045fF50E3EaBc102fCaCF1ae20Dd9F20a1251ab4
+  CREATE2_HERO_ADDRESS: 0xA1BFEAf640E2BceEb41C6a63586D82A232344313
+
+# dotenv: ['.env']
 
 tasks:
   default: task fg-test && task fg-fmt
@@ -21,64 +21,247 @@ tasks:
   fg-test: forge test --gas-report
   fg-fmt: forge fmt
 
+  mk-hello-bsct: |
+    echo "## Deploy then verify Hello Contract..."
+    forge create src/Hello.sol:Hello \
+      --rpc-url $BSC_TESTNET_RPC_URL \
+      --private-key $T0_KEY \
+      -vv
+    
+    ## history logs
+    # https://testnet.bscscan.com/address/0xA4cD33a273Cf2A6Ab2B05536b2F7E69c3b0f13ca#code
+
+  vf-hello-bsct: |
+    echo "## Deploy then verify Hello Contract..."
+    addr="0xA4cD33a273Cf2A6Ab2B05536b2F7E69c3b0f13ca"
+    forge verify-contract $addr src/Hello.sol:Hello \
+      --verifier etherscan \
+      --verifier-url $TEST_BSCSCAN_URL \
+      # --etherscan-api-key $BSCSCAN_API_KEY \
+      --chain-id 97 \
+      --watch
+    # not work??
+
+  mk-hello-sepolia: |
+    echo "## Deploy then verify Hello Contract..."
+    forge create src/Hello.sol:Hello \
+      --rpc-url $SEPOLIA_RPC_URL \
+      --private-key $T0_KEY 
+    
+    ## history logs
+    # https://sepolia.etherscan.io/address/0xcCF0AFecAB1Ae43fE27cF674fa6675bE9A4135C0#code
+  vf-hello-sepolia: |
+    echo "## Deploy then verify Hello Contract..."
+    addr="0xcCF0AFecAB1Ae43fE27cF674fa6675bE9A4135C0"
+    forge verify-contract $addr src/Hello.sol:Hello \
+      --verifier etherscan \
+      --verifier-url $SEPOLIA_ETHERSCAN_URL \
+      --etherscan-api-key $ETHERSCAN_API_KEY \
+      # -- chain sepolia \
+      --chain-id 11155111 \
+      --compiler-version "v0.8.28+commit.7893614a" \
+      --watch --force --optimizer-runs 200 --flatten
+      # --show-standard-json-input
+
+  # https://book.getfoundry.sh/tutorials/solidity-scripting#deploying-locally
+  s-counter: |
+    forge script script/Counter.s.sol:CounterScript \
+      --rpc-url $ANVIL_RPC_URL \
+      --broadcast -vv
+  s-erc721: |
+    forge script script/tokens/ERC721Token.s.sol:ERC721TokenScript \
+      --rpc-url $ANVIL_RPC_URL \
+      --broadcast -vv
+
+  # https://book.getfoundry.sh/reference/forge/forge-script
+  s-hello-on-blockscout: |
+    forge script script/Hello.s.sol:HelloScript \
+      --private-key $T0_KEY \
+      --rpc-url $SEPOLIA_RPC_URL \
+      --verifier blockscout \
+      --verifier-url https://eth-sepolia.blockscout.com/api/ \
+      --verify \
+      --broadcast -vv
+    ## verify on etherscan, blockscout(wait some moment)
+    # https://eth-sepolia.blockscout.com/address/0xDd4b2a33BBE378455f3A04b021b656b580dB4514?tab=contract
+
+  s-counter-on-blockscout: |
+    forge script script/Counter.s.sol:CounterScript \
+      --private-key $T0_KEY \
+      --rpc-url $SEPOLIA_RPC_URL \
+      --verifier blockscout \
+      --verifier-url https://eth-sepolia.blockscout.com/api/ \
+      --verify \
+      --broadcast -vv
+
+    ## NOTE
+    # alreay verified by others, manual verify on blockscout UI
+    # This contract has been verified using Blockscout Bytecode Database
+    # https://eth-sepolia.blockscout.com/address/0xC9d29f6114aac0EEBdc24d758f6b3b0aaFd2Bb8F?tab=contract
+    # about 2 weeks ago before above deployment
+    # https://eth-sepolia.blockscout.com/address/0xdE2A91a55FEc30C36d0a7896Ee8862D34c74529D?tab=contract
+
+  s-erc20token-on-blockscout: |
+    echo "## Deploy and verify ERC20Token with multiple files dependencies..."
+    forge script script/tokens/ERC20Token.s.sol:ERC20TokenScript \
+      --private-key $T0_KEY \
+      --rpc-url $SEPOLIA_RPC_URL \
+      --verifier blockscout \
+      --verifier-url=https://eth-sepolia.blockscout.com/api/ \
+      --verify \
+      --broadcast -vv
+    
+    ## NOTE  no verify on blockscout ???
+    # https://eth-sepolia.blockscout.com/address/0x6Cec64B4A09892B1257983225a387B430Bb5a757?tab=contract
+    # https://sepolia.etherscan.io/address/0x6cec64b4a09892b1257983225a387b430bb5a757#code
+    # https://eth-sepolia.blockscout.com/address/0x374ccde06f563ba94b7f78c7b63a46aba7c361cd?tab=contract
+    # https://sepolia.etherscan.io/address/0x374ccde06f563ba94b7f78c7b63a46aba7c361cd
+  
+  # docs: https://docs.blockscout.com/devs/verification/foundry-verification
+  # NOTE: verify on blockscout and etherscan !!!
+  erc20token-on-blockscout: |
+    echo "## Deploy and verify ERC20Token with multiple files dependencies..."
+    init_holder=$(cast wallet address --private-key $T0_KEY)
+    forge create src/tokens/ERC20Token.sol:ERC20Token \
+      --rpc-url $SEPOLIA_RPC_URL --private-key $T0_KEY \
+      # API key for Blockscout verification is optional. \
+      # --etherscan-api-key $SEPOLIA_BLOCKSCOUT_API_KEY \
+      # etherscan, sourcify & blockscout \
+      --verifier blockscout \
+      --verifier-url=https://eth-sepolia.blockscout.com/api/ \
+      --verify --verbose \
+      --constructor-args "USDT Mock" "USDT" 6 $init_holder 1000000000000
+
+    ## history logs
+    # https://eth-sepolia.blockscout.com/address/0x5B43560964E3A32EF69695975f96C3AcDDd8C6c8?tab=contract
+    # https://sepolia.etherscan.io/address/0x5b43560964e3a32ef69695975f96c3acddd8c6c8#code
+    # https://eth-sepolia.blockscout.com/address/0xAf3B3319342C936F1f8451535d1aDdBF711828cA?tab=contract
+
+  ## verify contract on bsct
+  hello-bsct: |
+    echo "## Deploy and verify Hello Contract..."
+    forge create src/Hello.sol:Hello \
+      --rpc-url $BSC_TESTNET_RPC_URL \
+      --private-key $T0_KEY \
+      --etherscan-api-key $BSCSCAN_API_KEY \
+      # --verifier etherscan \
+      --verify --verbose 
+    
+    ## history logs
+    # https://testnet.bscscan.com/address/0x21aca5c0c6e950bc52e3d6dbac2f470107b6c815
+    # similar contract
+    # https://testnet.bscscan.com/find-similar-contracts?m=exact&a=0x1b2e9b8b457a26ac98559580f03781321b1dc64f
+  
+  erc20token-bsct: |
+    echo "## Deploy and verify ERC20Token with multiple files dependencies..."
+    init_holder=$(cast wallet address --private-key $T0_KEY)
+    forge create src/tokens/ERC20Token.sol:ERC20Token \
+      --rpc-url $BSC_TESTNET_RPC_URL \
+      --private-key $T0_KEY \
+      --etherscan-api-key $BSCSCAN_API_KEY \
+      # --verifier etherscan \
+      --verify --verbose \
+      --constructor-args "USDT Mock" "USDT" 6 $init_holder 1000000000000
+    
+    ## history logs
+    # https://testnet.bscscan.com/address/0x23c53b387b1aee16ff4922b6efb2f2cf27ad5ba0#code
+  
+  ## verify contract on sepolia, todo use script by https://sepolia.etherscan.io/address/0x848ce10da7813d4ca323878524735fbc0f68addf
+  vt-hello: |
+    echo "## Deploy and verify Hello Contract..."
+    forge create src/Hello.sol:Hello \
+      --rpc-url $SEPOLIA_RPC_URL --private-key $T0_KEY \
+      --etherscan-api-key $ETHERSCAN_API_KEY \
+      --verifier etherscan \
+      --verify --verbose
+    
+    ## history logs
+    # https://sepolia.etherscan.io/address/0x21aca5c0c6e950bc52e3d6dbac2f470107b6c815#code
+    # also verified on multiple-chains explorer?
+    # can explore but not verified, because not use verifier=
+    # https://eth-sepolia.blockscout.com/address/0x21ACa5C0C6E950Bc52e3D6DbAc2f470107b6C815?tab=contract
+
+  vt-erc20token: |
+    echo "## Deploy and verify ERC20Token with multiple files dependencies..."
+    init_holder=$(cast wallet address --private-key $T0_KEY)
+    forge create src/tokens/ERC20Token.sol:ERC20Token \
+      --rpc-url $SEPOLIA_RPC_URL --private-key $T0_KEY \
+      --etherscan-api-key $ETHERSCAN_API_KEY --verifier etherscan \
+      --verify --verbose \
+      --constructor-args "USDT Mock" "USDT" 6 $init_holder 1000000000000
+
+    ## history logs
+    # https://sepolia.etherscan.io/address/0x1b2e9b8b457a26ac98559580f03781321b1dc64f#code
+    # https://eth-sepolia.blockscout.com/address/0x1b2E9B8B457a26Ac98559580f03781321b1DC64f?tab=logs
+ 
   ## tk create2-contracts
   c2-test: |
-    echo "## test2 token {{.CREATE2_TEST20_ADDRESS}}"
+    echo "## test2 token {{.CREATE2_USDT_MOCK_ADDRESS}}"
     echo "name()returns(string)"
-    cast call {{.CREATE2_TEST20_ADDRESS}} "name()returns(string)"
+    cast call {{.CREATE2_USDT_MOCK_ADDRESS}} "name()returns(string)"
     echo "symbol()returns(string)"
-    cast call {{.CREATE2_TEST20_ADDRESS}} "symbol()returns(string)"
+    cast call {{.CREATE2_USDT_MOCK_ADDRESS}} "symbol()returns(string)"
     echo "decimals()returns(uint8)"
-    cast call {{.CREATE2_TEST20_ADDRESS}} "decimals()returns(uint8)"
+    cast call {{.CREATE2_USDT_MOCK_ADDRESS}} "decimals()returns(uint8)"
     echo "initHolder()returns(address)"
-    cast call {{.CREATE2_TEST20_ADDRESS}} "initHolder()returns(address)"
+    cast call {{.CREATE2_USDT_MOCK_ADDRESS}} "initHolder()returns(address)"
     echo "initSupply()returns(uint256)"
-    cast call {{.CREATE2_TEST20_ADDRESS}} "initSupply()returns(uint256)"
+    cast call {{.CREATE2_USDT_MOCK_ADDRESS}} "initSupply()returns(uint256)"
     echo "balanceOf ALICE_ADDRESS={{.ALICE_ADDRESS}}"
-    cast call {{.CREATE2_TEST20_ADDRESS}} "balanceOf(address)returns(uint256)" {{.ALICE_ADDRESS}}
+    cast call {{.CREATE2_USDT_MOCK_ADDRESS}} "balanceOf(address)returns(uint256)" {{.ALICE_ADDRESS}}
     echo "balanceOf CREATE2_FACTORY={{.CREATE2_FACTORY}}"
-    cast call {{.CREATE2_TEST20_ADDRESS}} "balanceOf(address)returns(uint256)" {{.CREATE2_FACTORY}}
+    cast call {{.CREATE2_USDT_MOCK_ADDRESS}} "balanceOf(address)returns(uint256)" {{.CREATE2_FACTORY}}
 
     echo "## Hero ERC721Token"
     echo "name()returns(string)"
     cast call {{.CREATE2_HERO_ADDRESS}} "name()returns(string)"
     echo "symbol()returns(string)"
     cast call {{.CREATE2_HERO_ADDRESS}} "symbol()returns(string)"
-
-  # https://book.getfoundry.sh/tutorials/solidity-scripting#deploying-locally
-  fg-s-counter: |
-    source .env
-    # forge script script/Counter.s.sol:CounterScript \
-    #   --json -vvvv --rpc-url $ANVIL_RPC_URL --broadcast  # --verify
-    forge script script/Counter.s.sol:CounterScript --json -vvvv \
-      --fork-url $ANVIL_RPC_URL --broadcast
-  # todo bsct verify test
-  fg-s-counter-sepolia: |
-    source .env
-    forge script script/Counter.s.sol:CounterScript --broadcast -vvvv --rpc-url $SEPOLIA_RPC_URL #--verify 
+    echo "mintPrice()returns(uint256)"
+    cast call {{.CREATE2_HERO_ADDRESS}} "mintPrice()returns(uint256)"
+    echo "totalSupply()returns(uint256)"
+    cast call {{.CREATE2_HERO_ADDRESS}} "totalSupply()returns(uint256)"
 
   ## Anvil: anvil --help
   # https://book.getfoundry.sh/reference/anvil/
   anvil: |
-    echo "Starting anvil local test evm"
+    echo "Starting anvil test evm node"
     tmux kill-session -t anvil || true
     tmux new-session -d -s anvil "anvil" || true
     sleep 2
     task anvil-init
-    # update abi-bin(s)
-    task counter-abi-bin
-    task erc20token-abi-bin
-    task nft-abi-bin
     echo "run [ tmux a ] to attach anvil tmux session!"
     
   anvil-init: |
-    source .env
+    source .envrc
     forge script script/AnvilInit.s.sol:AnvilInitScript --rpc-url $ANVIL_RPC_URL --broadcast
   
+  up-abi-bins: |
+    task counter-abi-bin
+    task erc20token-abi-bin
+    task nft-abi-bin
+
   anvil-keys: cat keys/anvil.key | head -n 24 | tail -n +11
   anvil-accounts: cast rpc eth_accounts | jq
   accounts: task anvil-accounts
-  # anvil completions zsh > $HOME/.oh-my-zsh/completions/_anvil
+  # https://book.getfoundry.sh/config/shell-autocompletion#zsh
+  # this ok!
+  comp-omz: |
+    mkdir -p $HOME/.oh-my-zsh/completions
+    forge completions zsh > $HOME/.oh-my-zsh/completions/_forge
+    cast completions zsh > $HOME/.oh-my-zsh/completions/_cast
+    anvil completions zsh > $HOME/.oh-my-zsh/completions/_anvil
+    ls -l $HOME/.oh-my-zsh/completions/_*
+  # below not ok!
+  comp-zsh: |
+    forge completions zsh > /opt/homebrew/completions/zsh/_forge
+    cast completions zsh > /opt/homebrew/completions/zsh/_cast
+    anvil completions zsh > /opt/homebrew/completions/zsh/_anvil
+  comp-zsh-clean: |
+    rm -f /opt/homebrew/completions/zsh/_forge
+    rm -f /opt/homebrew/completions/zsh/_cast
+    rm -f /opt/homebrew/completions/zsh/_anvil
+    ls -l /opt/homebrew/completions/zsh/_*
 
   ## Cast https://book.getfoundry.sh/reference/anvil/#standard-methods
   node: cast rpc anvil_nodeInfo | jq
@@ -127,7 +310,7 @@ tasks:
     ABI=$(task create2-abi)
     BIN=$(task create2-bin)
 
-    cat <<EOL > local/Create2.json
+    cat <<EOL > _local/Create2.json
     {
       "abi": $ABI,
       "bin": "$BIN"
@@ -181,7 +364,7 @@ tasks:
       --json \
       # --etherscan-api-key <your_etherscan_api_key> \
       # --verify \
-      --constructor-args "Local USDT" "USDT" 6 10000000000
+      --constructor-args "USDT Mock" "USDT" 6 10000000000
       )
     deployedTo=$(echo $json | jq .deployedTo | tr -d '"')
     echo "deployedTo=$deployedTo with alice balance"
@@ -193,7 +376,7 @@ tasks:
     ABI=$(task erc20token-abi)
     BIN=$(task erc20token-bin)
 
-    cat <<EOL > local/ERC20Token.json
+    cat <<EOL > _local/ERC20Token.json
     {
       "abi": $ABI,
       "bin": "$BIN"
@@ -220,7 +403,7 @@ tasks:
     ABI=$(task nft-abi)
     BIN=$(task nft-bin)
 
-    cat <<EOL > local/ERC721Token.json
+    cat <<EOL > _local/ERC721Token.json
     {
       "abi": $ABI,
       "bin": "$BIN"
@@ -241,20 +424,24 @@ tasks:
   
   counter-abi-bin: |
     # solc --combined-json abi,bin src/Counter.sol:Counter | \
-    # jq ".contracts | to_entries | .[1].value " > local/Counter.json
+    # jq ".contracts | to_entries | .[1].value " > _local/Counter.json
     ABI=$(task counter-abi)
     BIN=$(task counter-bin)
 
-    cat <<EOL > local/Counter.json
+    cat <<EOL > _local/Counter.json
     {
       "abi": $ABI,
       "bin": "$BIN"
     }
     EOL
 
-  ## Base
+  ## Setup env
+
+  # show current config
+  cfg: forge config
 
   mapping: forge remappings
+  vs-sol-mapping: forge remappings > remappings.txt
   deps-install: |
     # forge install transmissions11/solmate@v7
     # forge install transmissions11/solmate
@@ -271,7 +458,8 @@ tasks:
   mk-hello-foundry: forge init hello-foundry --shallow
 
   env-test: |
-    echo SEPOLIA_RPC_URL=$SEPOLIA_RPC_URL ALICE_ADDRESS = $ALICE_ADDRESS
+    echo ALICE_ADDRESS = $ALICE_ADDRESS
+    echo SEPOLIA_RPC_URL=$SEPOLIA_RPC_URL 
     echo ANVIL_RPC_URL=$ANVIL_RPC_URL in env syntax ANVIL_RPC_URL={{.ANVIL_RPC_URL}} in var syntax
     echo UNKNOWN_ENV=$UNKNOWN_ENV in env syntax  UNKNOWN_ENV={{.UNKNOWN_ENV}} in var syntax
     echo UNKNOWN_VAR=$UNKNOWN_VAR in env syntax  UNKNOWN_ENV={{.UNKNOWN_VAR}} in var syntax

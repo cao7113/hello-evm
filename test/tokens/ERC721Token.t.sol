@@ -14,14 +14,14 @@ contract ERC721TokenTest is Test {
     uint256 public fee;
 
     function setUp() public {
-        nft = new ERC721Token("ERC721Token_tutorial", "TUT", "baseUri", runnerAddress, 5 gwei, 10000);
-        fee = nft.mint_price();
+        nft = new ERC721Token("ERC721Token_tutorial", "TUT", "baseUri", runnerAddress, 5 gwei, 10_000);
+        fee = nft.mintPrice();
     }
 
     function test_constructorInfo() public view {
         assertEq(runnerAddress, nft.owner());
-        assertEq(nft.total_supply(), 10000);
-        assertEq(nft.mint_price(), 5 gwei);
+        assertEq(nft.totalSupply(), 10_000);
+        assertEq(nft.mintPrice(), 5 gwei);
         assertEq(fee, 5 gwei);
     }
 
@@ -36,7 +36,7 @@ contract ERC721TokenTest is Test {
     }
 
     function test_MintPricePaid() public {
-        nft.mintTo{value: nft.mint_price()}(address(1));
+        nft.mintTo{value: nft.mintPrice()}(address(1));
     }
 
     function test_changeBaseURIAsOwner() public {
@@ -48,6 +48,7 @@ contract ERC721TokenTest is Test {
         //     runnerAddress.balance
         // );
         assertEq(runnerAddress.balance, 0);
+        assertNotEq(nft.baseURI(), "new://base-url");
         nft.setBaseURI("new://base-url");
         vm.stopPrank();
         assertEq(nft.baseURI(), "new://base-url");
@@ -56,7 +57,7 @@ contract ERC721TokenTest is Test {
     // todo: why failed ???
     // function test_RevertMintToZeroAddress() public {
     //     vm.expectRevert("INVALID_RECIPIENT");
-    //     nft.mintTo{value: nft.mint_price()}(address(0));
+    //     nft.mintTo{value: nft.mintPrice()}(address(0));
     // }
     function test_RevertMintToZeroAddress() public {
         vm.expectRevert("INVALID_RECIPIENT");
@@ -66,18 +67,18 @@ contract ERC721TokenTest is Test {
     function test_RevertMintMaxSupplyReached() public {
         uint256 slot = stdstore.target(address(nft)).sig("currentTokenId()").find();
         bytes32 loc = bytes32(slot);
-        bytes32 mockedCurrentTokenId = bytes32(abi.encode(10000));
+        bytes32 mockedCurrentTokenId = bytes32(abi.encode(10_000));
         vm.store(address(nft), loc, mockedCurrentTokenId);
 
-        assertEq(nft.total_supply(), 10000);
-        assertEq(nft.currentTokenId(), 10000);
+        assertEq(nft.totalSupply(), 10_000);
+        assertEq(nft.currentTokenId(), 10_000);
 
         vm.expectRevert(MaxSupply.selector);
         nft.mintTo{value: fee}(address(1));
     }
 
     function test_NewMintOwnerRegistered() public {
-        nft.mintTo{value: nft.mint_price()}(address(1));
+        nft.mintTo{value: nft.mintPrice()}(address(1));
         uint256 slotOfNewOwner = stdstore.target(address(nft)).sig(nft.ownerOf.selector).with_key(address(1)).find();
 
         uint160 ownerOfTokenIdOne = uint160(uint256((vm.load(address(nft), bytes32(abi.encode(slotOfNewOwner))))));
@@ -85,20 +86,20 @@ contract ERC721TokenTest is Test {
     }
 
     function test_BalanceIncremented() public {
-        nft.mintTo{value: nft.mint_price()}(address(1));
+        nft.mintTo{value: nft.mintPrice()}(address(1));
         uint256 slotBalance = stdstore.target(address(nft)).sig(nft.balanceOf.selector).with_key(address(1)).find();
 
         uint256 balanceFirstMint = uint256(vm.load(address(nft), bytes32(slotBalance)));
         assertEq(balanceFirstMint, 1);
 
-        nft.mintTo{value: nft.mint_price()}(address(1));
+        nft.mintTo{value: nft.mintPrice()}(address(1));
         uint256 balanceSecondMint = uint256(vm.load(address(nft), bytes32(slotBalance)));
         assertEq(balanceSecondMint, 2);
     }
 
     function test_SafeContractReceiver() public {
         Receiver receiver = new Receiver();
-        nft.mintTo{value: nft.mint_price()}(address(receiver));
+        nft.mintTo{value: nft.mintPrice()}(address(receiver));
         uint256 slotBalance =
             stdstore.target(address(nft)).sig(nft.balanceOf.selector).with_key(address(receiver)).find();
 
@@ -154,9 +155,9 @@ contract ERC721TokenTest is Test {
     function test_WithdrawalFailsAsNotOwner() public {
         // Mint an ERC721Token, sending eth to the contract
         Receiver receiver = new Receiver();
-        nft.mintTo{value: nft.mint_price()}(address(receiver));
+        nft.mintTo{value: nft.mintPrice()}(address(receiver));
         // Check that the balance of the contract is correct
-        assertEq(address(nft).balance, nft.mint_price());
+        assertEq(address(nft).balance, nft.mintPrice());
         // Confirm that a non-owner cannot withdraw
         vm.expectRevert("Ownable: caller is not the owner");
         vm.startPrank(address(0xd3ad));

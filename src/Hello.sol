@@ -2,9 +2,9 @@
 pragma solidity ^0.8.13;
 
 contract Hello {
-    string public greeting;
+    string public message;
 
-    function set(string memory _greeting) public {
-        greeting = _greeting;
+    function set(string memory _message) public {
+        message = _message;
     }
 }

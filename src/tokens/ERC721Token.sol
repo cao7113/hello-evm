@@ -19,8 +19,8 @@ contract ERC721Token is ERC721, Ownable {
 
     string public baseURI;
     uint256 public currentTokenId;
-    uint256 public mint_price;
-    uint256 public immutable total_supply;
+    uint256 public mintPrice;
+    uint256 public immutable totalSupply;
 
     event BaseURIChanged(string indexed from, string indexed to);
 
@@ -29,23 +29,23 @@ contract ERC721Token is ERC721, Ownable {
         string memory _symbol,
         string memory _baseURI,
         address _owner,
-        uint256 _mint_price,
-        uint256 _total_supply
+        uint256 _mintPrice,
+        uint256 _totalSupply
     ) ERC721(_name, _symbol) Ownable(_owner) {
         baseURI = _baseURI;
-        mint_price = _mint_price;
-        if (_total_supply <= 0) {
+        mintPrice = _mintPrice;
+        if (_totalSupply <= 0) {
             revert InvalidSupply();
         }
-        total_supply = _total_supply;
+        totalSupply = _totalSupply;
     }
 
     function mintTo(address recipient) public payable returns (uint256) {
-        if (msg.value != mint_price) {
+        if (msg.value != mintPrice) {
             revert MintPriceNotPaid();
         }
         uint256 newTokenId = currentTokenId + 1;
-        if (newTokenId > total_supply) {
+        if (newTokenId > totalSupply) {
             revert MaxSupply();
         }
         currentTokenId = newTokenId;

@@ -50,7 +50,7 @@ contract AcTest is Test {
         uint256 bal = addr.balance;
         assertEq(bal, 0);
         vm.deal(addr, 1 gwei);
-        assertEq(addr.balance, 1000000000);
+        assertEq(addr.balance, 1_000_000_000);
 
         vm.stopPrank();
 

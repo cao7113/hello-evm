@@ -11,6 +11,7 @@ out/
 docs/
 
 # Dotenv file
-.env
+.env*
 
 keys
+_up
