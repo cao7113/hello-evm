@@ -21,6 +21,8 @@ tasks:
   fg-test: forge test --gas-report
   fg-fmt: forge fmt
 
+  ## multicall3 deployment
+
   mk-hello-bsct: |
     echo "## Deploy then verify Hello Contract..."
     forge create src/Hello.sol:Hello \
@@ -42,6 +44,28 @@ tasks:
       --watch
     # not work??
 
+  mk-hello2-sepolia: |
+    echo "## Deploy then verify Hello2 Contract..."
+    forge create src/Hello2.sol:Hello2 \
+      --rpc-url $SEPOLIA_RPC_URL \
+      --private-key $T0_KEY 
+    
+    ## history logs
+    # https://sepolia.etherscan.io/address/0x6eeAeC18aCa849906A156b145aeA4198F39E0B7a
+
+  vf-hello2-sepolia: |
+    echo "## Deploy then verify Hello2 Contract..."
+    addr="0x6eeAeC18aCa849906A156b145aeA4198F39E0B7a"
+    forge verify-contract $addr src/Hello2.sol:Hello2 \
+      --verifier etherscan \
+      --verifier-url $SEPOLIA_ETHERSCAN_URL \
+      --etherscan-api-key $ETHERSCAN_API_KEY \
+      # -- chain sepolia \
+      --chain-id 11155111 \
+      --compiler-version "v0.8.28+commit.7893614a" \
+      # --skip-is-verified-check \
+      --watch --optimizer-runs 200
+
   mk-hello-sepolia: |
     echo "## Deploy then verify Hello Contract..."
     forge create src/Hello.sol:Hello \
@@ -50,9 +74,14 @@ tasks:
     
     ## history logs
     # https://sepolia.etherscan.io/address/0xcCF0AFecAB1Ae43fE27cF674fa6675bE9A4135C0#code
+    # 0x74BB4Fc01AF2dc81D95076Fe60e02037ed61224F
+    # 0xBFb64A28d37bA72ab2ba1487a296430bC8747714
+    # auto verify this step, so below step failed??
+
   vf-hello-sepolia: |
     echo "## Deploy then verify Hello Contract..."
-    addr="0xcCF0AFecAB1Ae43fE27cF674fa6675bE9A4135C0"
+    # addr="0xcCF0AFecAB1Ae43fE27cF674fa6675bE9A4135C0"
+    addr="0x74BB4Fc01AF2dc81D95076Fe60e02037ed61224F"
     forge verify-contract $addr src/Hello.sol:Hello \
       --verifier etherscan \
       --verifier-url $SEPOLIA_ETHERSCAN_URL \
@@ -60,8 +89,9 @@ tasks:
       # -- chain sepolia \
       --chain-id 11155111 \
       --compiler-version "v0.8.28+commit.7893614a" \
-      --watch --force --optimizer-runs 200 --flatten
-      # --show-standard-json-input
+      --skip-is-verified-check \
+      --watch --optimizer-runs 200
+  # not work, but verfied? https://sepolia.etherscan.io/address/0xcCF0AFecAB1Ae43fE27cF674fa6675bE9A4135C0#code
 
   # https://book.getfoundry.sh/tutorials/solidity-scripting#deploying-locally
   s-counter: |
@@ -235,8 +265,25 @@ tasks:
   anvil-init: |
     source .envrc
     forge script script/AnvilInit.s.sol:AnvilInitScript --rpc-url $ANVIL_RPC_URL --broadcast
+    task deploy-multicall3
   
-  up-abi-bins: |
+    
+  # todo: using forge script!!!
+  deploy-multicall3: |
+    deployerAddr="0x05f32B3cC3888453ff71B01135B34FF8e41263F2"
+    nonce=$(cast nonce $deployerAddr --rpc-url $ANVIL_RPC_URL)
+    if [ "$nonce" -eq 0 ]; then
+        cast send --from $A0_ADDR --private-key $A0_KEY $deployerAddr --value 0.5ether --rpc-url $ANVIL_RPC_URL
+        cast balance $deployerAddr --rpc-url $ANVIL_RPC_URL
+        tx=$(cast rpc eth_sendRawTransaction --rpc-url $ANVIL_RPC_URL "$(cat src/multicall3-pre-signed.dat)")
+        # 0xcA11bde05977b3631167028862bE2a173976CA11
+        cast compute-address $deployerAddr --nonce 0
+    else
+        # error code -32003: nonce too low
+        echo "nonce($nonce) != 0, maybe deployed!"
+    fi
+
+  up-abi-bin: |
     task counter-abi-bin
     task erc20token-abi-bin
     task nft-abi-bin
