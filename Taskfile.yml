@@ -21,6 +21,11 @@ tasks:
   fg-test: forge test --gas-report
   fg-fmt: forge fmt
 
+  ## git submodules
+  gsub: |
+    git submodule update --init --recursive
+    git submodule update --init lib/forge-std
+
   ## multicall3 deployment
 
   mk-hello-bsct: |

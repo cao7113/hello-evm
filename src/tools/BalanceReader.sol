@@ -14,9 +14,7 @@ contract BalanceReader {
         maxBatchSize = newBatchSize;
     }
 
-    function getBalances(
-        address[] memory accounts
-    ) public view returns (uint256[] memory balances) {
+    function getBalances(address[] memory accounts) public view returns (uint256[] memory balances) {
         require(accounts.length <= maxBatchSize, "Batch size exceeds limit");
 
         balances = new uint256[](accounts.length);

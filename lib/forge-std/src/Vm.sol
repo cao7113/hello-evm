@@ -264,6 +264,31 @@ interface VmSafe {
         address contractAddr;
     }
 
+    /// The transaction type (`txType`) of the broadcast.
+    enum BroadcastTxType {
+        // Represents a CALL broadcast tx.
+        Call,
+        // Represents a CREATE broadcast tx.
+        Create,
+        // Represents a CREATE2 broadcast tx.
+        Create2
+    }
+
+    /// Represents a transaction's broadcast details.
+    struct BroadcastTxSummary {
+        // The hash of the transaction that was broadcasted
+        bytes32 txHash;
+        // Represent the type of transaction among CALL, CREATE, CREATE2
+        BroadcastTxType txType;
+        // The address of the contract that was called or created.
+        // This is address of the contract that is created if the txType is CREATE or CREATE2.
+        address contractAddress;
+        // The block number the transaction landed in.
+        uint64 blockNumber;
+        // Status of the transaction, retrieved from the transaction receipt.
+        bool success;
+    }
+
     // ======== Crypto ========
 
     /// Derives a private key from the name, labels the account with that name, and returns the wallet.
@@ -305,6 +330,23 @@ interface VmSafe {
 
     /// Adds a private key to the local forge wallet and returns the address.
     function rememberKey(uint256 privateKey) external returns (address keyAddr);
+
+    /// Derive a set number of wallets from a mnemonic at the derivation path `m/44'/60'/0'/0/{0..count}`.
+    ///
+    /// The respective private keys are saved to the local forge wallet for later use and their addresses are returned.
+    function rememberKeys(string calldata mnemonic, string calldata derivationPath, uint32 count)
+        external
+        returns (address[] memory keyAddrs);
+
+    /// Derive a set number of wallets from a mnemonic in the specified language at the derivation path `m/44'/60'/0'/0/{0..count}`.
+    ///
+    /// The respective private keys are saved to the local forge wallet for later use and their addresses are returned.
+    function rememberKeys(
+        string calldata mnemonic,
+        string calldata derivationPath,
+        string calldata language,
+        uint32 count
+    ) external returns (address[] memory keyAddrs);
 
     /// Signs data with a `Wallet`.
     /// Returns a compact signature (`r`, `vs`) as per EIP-2098, where `vs` encodes both the
@@ -754,6 +796,46 @@ interface VmSafe {
     /// `path` is relative to the project root.
     function writeLine(string calldata path, string calldata data) external;
 
+    /// Returns the most recent broadcast for the given contract on `chainId` matching `txType`.
+    ///
+    /// For example:
+    ///
+    /// The most recent deployment can be fetched by passing `txType` as `CREATE` or `CREATE2`.
+    ///
+    /// The most recent call can be fetched by passing `txType` as `CALL`.
+    function getBroadcast(string calldata contractName, uint64 chainId, BroadcastTxType txType)
+        external
+        returns (BroadcastTxSummary memory);
+
+    /// Returns all broadcasts for the given contract on `chainId` with the specified `txType`.
+    ///
+    /// Sorted such that the most recent broadcast is the first element, and the oldest is the last. i.e descending order of BroadcastTxSummary.blockNumber.
+    function getBroadcasts(string calldata contractName, uint64 chainId, BroadcastTxType txType)
+        external
+        returns (BroadcastTxSummary[] memory);
+
+    /// Returns all broadcasts for the given contract on `chainId`.
+    ///
+    /// Sorted such that the most recent broadcast is the first element, and the oldest is the last. i.e descending order of BroadcastTxSummary.blockNumber.
+    function getBroadcasts(string calldata contractName, uint64 chainId)
+        external
+        returns (BroadcastTxSummary[] memory);
+
+    /// Returns the most recent deployment for the current `chainId`.
+    function getDeployment(string calldata contractName) external returns (address deployedAddress);
+
+    /// Returns the most recent deployment for the given contract on `chainId`
+    function getDeployment(string calldata contractName, uint64 chainId) external returns (address deployedAddress);
+
+    /// Returns all deployments for the given contract on `chainId`
+    ///
+    /// Sorted in descending order of deployment time i.e descending order of BroadcastTxSummary.blockNumber.
+    ///
+    /// The most recent deployment is the first element, and the oldest is the last.
+    function getDeployments(string calldata contractName, uint64 chainId)
+        external
+        returns (address[] memory deployedAddresses);
+
     // ======== JSON ========
 
     /// Checks if `key` exists in a JSON object.
@@ -978,6 +1060,9 @@ interface VmSafe {
 
     /// Stops collecting onchain transactions.
     function stopBroadcast() external;
+
+    /// Returns addresses of available unlocked wallets in the script environment.
+    function getWallets() external returns (address[] memory wallets);
 
     // ======== String ========
 
@@ -1776,6 +1861,16 @@ interface Vm is VmSafe {
     function mockCallRevert(address callee, uint256 msgValue, bytes calldata data, bytes calldata revertData)
         external;
 
+    /// Reverts a call to an address with specified revert data.
+    ///
+    /// Overload to pass the function selector directly `token.approve.selector` instead of `abi.encodeWithSelector(token.approve.selector)`.
+    function mockCallRevert(address callee, bytes4 data, bytes calldata revertData) external;
+
+    /// Reverts a call to an address with a specific `msg.value`, with specified revert data.
+    ///
+    /// Overload to pass the function selector directly `token.approve.selector` instead of `abi.encodeWithSelector(token.approve.selector)`.
+    function mockCallRevert(address callee, uint256 msgValue, bytes4 data, bytes calldata revertData) external;
+
     /// Mocks a call to an address, returning specified data.
     /// Calldata can either be strict or a partial match, e.g. if you only
     /// pass a Solidity selector to the expected calldata, then the entire Solidity
@@ -1785,6 +1880,20 @@ interface Vm is VmSafe {
     /// Mocks a call to an address with a specific `msg.value`, returning specified data.
     /// Calldata match takes precedence over `msg.value` in case of ambiguity.
     function mockCall(address callee, uint256 msgValue, bytes calldata data, bytes calldata returnData) external;
+
+    /// Mocks a call to an address, returning specified data.
+    /// Calldata can either be strict or a partial match, e.g. if you only
+    /// pass a Solidity selector to the expected calldata, then the entire Solidity
+    /// function will be mocked.
+    ///
+    /// Overload to pass the function selector directly `token.approve.selector` instead of `abi.encodeWithSelector(token.approve.selector)`.
+    function mockCall(address callee, bytes4 data, bytes calldata returnData) external;
+
+    /// Mocks a call to an address with a specific `msg.value`, returning specified data.
+    /// Calldata match takes precedence over `msg.value` in case of ambiguity.
+    ///
+    /// Overload to pass the function selector directly `token.approve.selector` instead of `abi.encodeWithSelector(token.approve.selector)`.
+    function mockCall(address callee, uint256 msgValue, bytes4 data, bytes calldata returnData) external;
 
     /// Mocks multiple calls to an address, returning specified data for each call.
     function mockCalls(address callee, bytes calldata data, bytes[] calldata returnData) external;
