@@ -1,0 +1,60 @@
+# https://taskfile.dev
+version: "3"
+tasks:
+  dp-sepolia: npx hardhat run scripts/deploy-FunNFT.ts --network sepolia
+  dp-local: npx hardhat run scripts/deploy-FunNFT.ts --network hardhat
+  dplog: tail -30 deploy-log.txt
+  t: REPORT_GAS=true npx hardhat test
+  sh: npx hardhat console
+  install: npm install
+  hh-build: npx hardhat compile
+  # mint: npx hardhat mint-fun --contract xxx --network sepolia
+  accounts: npx hardhat accounts
+  cover: npx hardhat coverage
+  dp-fair: npx hardhat run scripts/deploy-FunNFT.ts --network zkfair-testnet
+  # npx hardhat mint-fun --contract 0xb386A97ba7F2D8189F73B54E6dD41657ED439825 --network zkfair-testnet --count 2 --target 0x4666C260cDA46a9d1C6E71Af38ffe4631811A96b
+
+  setup:
+    cmds:
+      - |
+        npm init -y
+        npm install --save-dev hardhat
+        npx hardhat init
+
+        npm install @openzeppelin/contracts
+
+        npm install --save-dev @solidstate/hardhat-accounts
+        # npm install --save-dev hardhat-sourcify
+        
+  try:
+    cmds:
+      - node scripts/contract-interact.js
+
+  compile:
+    cmds:
+      - npx hardhat compile
+  
+  deploy:
+    cmds:
+      - npx hardhat run scripts/deploy.js --network ropsten
+
+  verify:
+    cmds:
+      #- npx hardhat verify --network ropsten DEPLOYED_CONTRACT_ADDRESS 'Hello World!'
+      - npx hardhat verify --network ropsten 0x01b8280A556E9DC57087918B9B3D6DeDAf970225 'Hello World!'
+
+  setup:
+    cmds:
+    - npm init
+    - npm install dotenv --save
+    - npm install --save-dev @nomiclabs/hardhat-ethers "ethers@^5.0.0"
+    - npm install @alch/alchemy-web3
+
+  install-hardhat-etherscan:
+    cmds:
+      - npm install --save-dev @nomiclabs/hardhat-etherscan
+
+  install-hardhat:
+    cmds:
+    - npm install --save-dev hardhat
+    # npx hardhat 

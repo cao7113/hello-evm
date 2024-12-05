@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-contract Hello2 {
+contract HelloWithMessage {
     string internal message;
 
-    constructor() {
-        message = "hi";
+    constructor(string memory _message) {
+        message = _message;
     }
 
+    // anyone can set message
     function set(string memory _message) public {
         message = _message;
     }

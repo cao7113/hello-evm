@@ -60,20 +60,12 @@ contract AnvilInitScript is Script {
         // );
         // require(token_id == 1, "init mint hero token != 1");
 
-        // deploy tools by create2
-        // batch balace reader
-        // initCode = abi.encodePacked(type(BalanceReader).creationCode);
-        // address balanceReaderAddress = create2Deployer.deploy(salt, initCode);
-        // uint256 batch_size = BalanceReader(balanceReaderAddress).maxBatchSize();
-        // require(batch_size == 20, "default batch-size != 20");
-
         // try write final result
         console.log("## Anvil Create Init Result Begin");
         console.log("CREATE2_FACTORY:", address(create2Deployer));
         console.log("CREATE2_COUNTER_ADDRESS:", counterAddress);
         console.log("CREATE2_USDT_MOCK_ADDRESS:", erc20tokenAddress);
         console.log("CREATE2_HERO_ADDRESS:", nftAddress);
-        // console.log("CREATE2_BALANCE_READER_ADDRESS:", balanceReaderAddress);
         console.log("## Anvil Create Init Result End");
 
         vm.stopBroadcast();

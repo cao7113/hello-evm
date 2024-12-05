@@ -2,19 +2,20 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Hello2} from "../src/Hello2.sol";
+import {HelloWithMessage} from "../src/HelloWithMessage.sol";
 
-contract Hello2Test is Test {
-    Hello2 public hello;
+contract HelloWithMessageTest is Test {
+    HelloWithMessage public hello;
 
     function setUp() public {
-        hello = new Hello2();
+        hello = new HelloWithMessage("hi");
     }
 
     function test_Greeting() public {
         assertEq(hello.get(), "hi");
-        address setter = address(123);
+
         // anyone can set hello message
+        address setter = address(123);
         vm.prank(setter);
         hello.set("hello");
         assertEq(hello.get(), "hello");

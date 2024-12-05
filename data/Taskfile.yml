@@ -1,0 +1,43 @@
+# https://taskfile.dev
+version: "3"
+dotenv: [".env"]
+tasks:
+  ## JSON RPC and Web3 as https://eth.wiki/json-rpc/API
+  client: curl -X POST --data '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":67}' $ETHER_RPC_URL | jq
+  sha3: curl -X POST --data '{"jsonrpc":"2.0","method":"web3_sha3","params":["0x68656c6c6f20776f726c64"],"id":64}' $ETHER_RPC_URL | jq
+  netid: curl -X POST --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":67}' $ETHER_RPC_URL | jq
+  # curl -X POST --data '{"jsonrpc":"2.0","method":"net_listening","params":[],"id":67}'
+  peercnt: curl -X POST --data '{"jsonrpc":"2.0","method":"net_peerCount","params":[],"id":74}' $ETHER_RPC_URL | jq
+  protocol: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_protocolVersion","params":[],"id":67}' $ETHER_RPC_URL | jq
+  syncing: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_syncing","params":[],"id":1}' $ETHER_RPC_URL | jq
+  coinbase: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_coinbase","params":[],"id":64}' $ETHER_RPC_URL | jq
+  # curl -X POST --data '{"jsonrpc":"2.0","method":"eth_mining","params":[],"id":71}'
+  # curl -X POST --data '{"jsonrpc":"2.0","method":"eth_hashrate","params":[],"id":71}'
+  gasprice: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_gasPrice","params":[],"id":73}' $ETHER_RPC_URL | jq
+  # curl -X POST --data '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1}'
+  blocknum: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":83}' $ETHER_RPC_URL | jq
+  balance: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBalance","params":["0x407d73d8a49eeb85d32cf465507dd71d507100c1", "latest"],"id":1}' $ETHER_RPC_URL | jq
+  # curl -X POST --data '{"jsonrpc":"2.0", "method": "eth_getStorageAt", "params": ["0x295a70b2de5e3953354a6a8344e616ed314d7251", "0x0", "latest"], "id": 1}' localhost:8545
+  # curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionCount","params":["0x407d73d8a49eeb85d32cf465507dd71d507100c1","latest"],"id":1}'
+  # curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getCode","params":["0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b", "0x2"],"id":1}'
+  sign: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_sign","params":["0x9b2055d370f73ec7d8a03e965129118dc8f5bf83", "0xdeadbeaf"],"id":1}' $ETHER_RPC_URL | jq
+  blockbyhash: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBlockByHash","params":["0xdc0818cf78f21a8e70579cb46a43643f78291264dda342ae31049421c82d21ae", false],"id":1}' $ETHER_RPC_URL | jq
+  block: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest", false],"id":1}' $ETHER_RPC_URL | jq
+  blockfull: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest", true],"id":1}' $ETHER_RPC_URL | jq
+  txhash: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionByHash","params":["0x88df016429689c079f3b2f6ad39fa052532c56795b733da78a91ebe6a713944b"],"id":1}' $ETHER_RPC_URL | jq
+  receipt: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionReceipt","params":["0xe3a281838a57afac0a322078c130e0ed4bf96ff29bda873c884f3d419433a06d"],"id":1}' $ETHER_RPC_URL | jq
+  uncle: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getUncleByBlockHashAndIndex","params":["0xc6ef2fc5426d6ad6fd9e2a26abeab0aa2411b7ab17f30a99d3cb96aed1d1055b", "0x0"],"id":1}' $ETHER_RPC_URL | jq
+  compilers: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getCompilers","params":[],"id":1}' $ETHER_RPC_URL | jq
+  filter: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_newFilter","params":[{"topics":["0x12341234"]}],"id":73}' $ETHER_RPC_URL | jq
+  work: curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getWork","params":[],"id":73}' $ETHER_RPC_URL | jq
+  # ...
+
+  install-solidity:
+    desc: install solidity compiler https://docs.soliditylang.org/en/v0.8.2/installing-solidity.html#macos-packages
+    cmds:
+      - |
+        # brew update
+        # brew upgrade
+        brew tap ethereum/ethereum
+        brew install solidity
+        solc --version

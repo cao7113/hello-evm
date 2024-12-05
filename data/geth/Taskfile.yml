@@ -1,0 +1,20 @@
+# https://taskfile.dev
+version: "3"
+dotenv: [".env"]
+tasks:
+  install-geth:
+    desc: install geth as https://geth.ethereum.org/docs/install-and-build/installing-geth
+    cmds:
+      - brew tap ethereum/ethereum
+      - brew install ethereum
+      - geth version
+    # - geth help
+
+  ## Data https://geth.ethereum.org/docs/install-and-build/backup-restore
+  data: ls -l ~/Library/Ethereum
+  # Most important info first: REMEMBER YOUR PASSWORD and BACKUP YOUR KEYSTORE.
+  keystore: ls -l ~/Library/Ethereum/keystore
+  ethash-dag: ls -l ~/.ethash
+  clean-db: geth removedb
+
+  ## accounts management
