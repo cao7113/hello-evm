@@ -26,6 +26,13 @@ tasks:
     git submodule update --init --recursive
     git submodule update --init lib/forge-std
 
+  ## OpenZepplin proxy
+  # https://docs.openzeppelin.com/upgrades-plugins/1.x/foundry-upgrades
+  setup-openzeppelin-upgrades: |
+    # forge install foundry-rs/forge-std
+    forge install OpenZeppelin/openzeppelin-foundry-upgrades
+    forge install OpenZeppelin/openzeppelin-contracts-upgradeable
+
   ## multicall3 deployment
 
   mk-hello-bsct: |
