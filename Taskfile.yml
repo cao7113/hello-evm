@@ -25,11 +25,14 @@ tasks:
   gsub: |
     git submodule update --init --recursive
     git submodule update --init lib/forge-std
+  
+  submodules: git submodule status
 
   ## OpenZepplin proxy
   # https://docs.openzeppelin.com/upgrades-plugins/1.x/foundry-upgrades
   setup-openzeppelin-upgrades: |
     # forge install foundry-rs/forge-std
+    # forge install OpenZeppelin/openzeppelin-contracts
     forge install OpenZeppelin/openzeppelin-foundry-upgrades
     forge install OpenZeppelin/openzeppelin-contracts-upgradeable
 

@@ -10,6 +10,7 @@ contract A {
         address sender;
         bytes data;
         bytes4 sig;
+        // bytes4 funcSig;
         uint256 age;
     }
 
@@ -47,6 +48,35 @@ contract UnitsAndGlobalsTest is Test {
         console.log(info.sender);
         console.logBytes(info.data);
         console.logBytes4(info.sig);
+        // assertNotEq(info.sig, info.funcSig);
         console.log(info.age);
+    }
+
+    function testAddress() public {
+        address addr = address(0x12345678);
+        assertEq(addr.code, hex"");
+        assertEq(bytes1(""), hex"");
+        // 0x0000000000000000000000000000000000000000000000000000000000000000
+        // console.logBytes32(addr.codehash);
+        assertEq(addr.codehash, hex"0000000000000000000000000000000000000000000000000000000000000000");
+
+        // Due to the fact that the EVM considers a call to a non-existing contract to always succeed, Solidity includes an extra check using the extcodesize opcode when performing external calls. This ensures that the contract that is about to be called either actually exists (it contains code) or an exception is raised.
+        // call on non-contract address
+        addr = makeAddr("unknown contract");
+        assertEq(addr.code, bytes(""));
+        (bool r, bytes memory rBytes) = addr.call(hex"123456");
+        assertTrue(r);
+        // console.log("result bytes");
+        // // 0x
+        // console.logBytes(rBytes);
+        assertEq(rBytes, bytes(""));
+        // Better use contract instance!
+    }
+
+    function testCodes() public view {
+        // console.logBytes(type(A).creationCode);
+        // console.logBytes(type(A).runtimeCode);
+        assertEq(address(a).code, type(A).runtimeCode);
+        assertNotEq(address(a).code, type(A).creationCode);
     }
 }

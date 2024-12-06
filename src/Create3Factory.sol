@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 // Copied from solmate/utils/CREATE3.sol
 // check raw test in solmate/src/test/CREATE3.t.sol
 
-import {Bytes32AddressLib} from "solmate/utils/Bytes32AddressLib.sol";
+import {Bytes32AddressLib} from "@solmate/utils/Bytes32AddressLib.sol";
 
 /// @notice Deploy to deterministic addresses without an initcode factor.
 /// @author Solmate (https://github.com/transmissions11/solmate/blob/main/src/utils/CREATE3.sol)

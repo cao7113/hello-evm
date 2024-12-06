@@ -4,9 +4,9 @@ pragma solidity ^0.8.20;
 // https://book.getfoundry.sh/tutorials/solmate-nft
 // https://github.com/FredCoen/nft-tutorial
 
-import {ERC721} from "solmate/tokens/ERC721.sol";
-import {Ownable} from "openzeppelin-contracts/contracts/access/Ownable.sol";
-import {Strings} from "openzeppelin-contracts/contracts/utils/Strings.sol";
+import {ERC721} from "@solmate/tokens/ERC721.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 error InvalidSupply();
 error MintPriceNotPaid();

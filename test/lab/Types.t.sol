@@ -27,4 +27,8 @@ def";
         string memory a2 = hex"0011223344556677";
         assertEq(a1, a2);
     }
+
+    function testBytesN() public pure {
+        assertEq(hex"1122", bytes.concat(hex"11", hex"22"));
+    }
 }
